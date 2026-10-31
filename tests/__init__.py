@@ -1,0 +1,1 @@
+# Tests package for Offline AI Assistant

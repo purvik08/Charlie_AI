@@ -1,0 +1,23 @@
+# Core requirements
+pyttsx3>=2.90
+requests>=2.28.1
+
+# GUI (Tkinter is usually included with Python)
+# For systems where it's not included, you may need to install python3-tk
+
+# System tray functionality
+pystray>=0.19.0
+Pillow>=9.0.0
+
+# Optional but recommended for enhanced functionality
+psutil>=5.9.0  # For system information and battery monitoring
+
+# Local LLM inference
+llama-cpp-python>=0.2.0
+
+# CLI
+typer>=0.9.0
+rich>=13.0.0
+
+# For type hints (development)
+typing_extensions>=4.5.0; python_version < "3.10"

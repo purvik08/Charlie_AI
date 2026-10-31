@@ -1,0 +1,589 @@
+# Complete Migration Prompt: Replace Ollama with llama.cpp
+
+You are a senior AI systems engineer and software architect.
+
+Your task is to completely remove Ollama from my project and replace it with a native llama.cpp-based inference engine while preserving all existing functionality, improving performance, reducing latency, minimizing resource usage, and making the system more modular and reliable.
+
+## Primary Objectives
+
+1. Remove **every dependency on Ollama** from the project.
+2. Replace all inference with **llama.cpp**.
+3. Preserve every feature currently implemented.
+4. Improve architecture wherever possible.
+5. Reduce inference errors and failure points as much as practically possible through validation, structured outputs, retries, and robust error handling.
+6. Keep the entire system fully offline.
+7. Maintain compatibility with my existing downloaded models.
+
+---
+
+# IMPORTANT REQUIREMENTS
+
+## DO NOT DELETE MY MODELS
+
+I already have several downloaded models currently managed through Ollama.
+
+Examples include:
+
+* nemotron-mini
+* qwen3:0.6B
+* qwen3:1.7B
+
+I DO NOT want to lose these models.
+
+Instead:
+
+* locate the GGUF files already stored on disk (or guide the project to use equivalent GGUF files if required),
+* reuse existing model assets wherever possible,
+* do not require me to redownload models unnecessarily,
+* migrate model loading from Ollama to llama.cpp.
+
+---
+
+# Completely Remove Ollama
+
+Search the entire codebase.
+
+Remove:
+
+* Ollama API calls
+* HTTP endpoints
+* localhost:11434 references
+* Ollama client wrappers
+* shell commands
+* startup scripts
+* process launchers
+* configuration files
+* service checks
+* retry logic specific to Ollama
+* environment variables
+* dependency injection registrations
+* package references
+* documentation references
+
+No component should depend on Ollama after migration.
+
+---
+
+# Replace with llama.cpp
+
+Use llama.cpp as the only inference engine.
+
+Requirements:
+
+* native loading
+* streaming inference
+* GGUF support
+* configurable context length
+* configurable threads
+* configurable batch size
+* configurable GPU layers (if available)
+* CPU fallback
+* async inference
+* inference cancellation
+* token streaming
+* reusable inference sessions
+* KV cache reuse where appropriate
+* structured output support
+
+Create a clean abstraction so models can be swapped without changing application logic.
+
+Example:
+
+ModelManager
+
+↓
+
+InferenceEngine Interface
+
+↓
+
+LlamaCppEngine
+
+Future engines should be pluggable.
+
+---
+
+# Model Management
+
+Create a centralized Model Manager.
+
+Responsibilities:
+
+* discover available GGUF models
+* register models automatically
+* load/unload models
+* cache loaded models
+* prevent duplicate loading
+* manage memory
+* expose model metadata
+* health monitoring
+* usage statistics
+* configurable defaults
+
+Support multiple models simultaneously.
+
+Example:
+
+General Chat
+
+↓
+
+Qwen 3 1.7B
+
+Code
+
+↓
+
+Nemotron Mini
+
+Small Tasks
+
+↓
+
+Qwen 3 0.6B
+
+Routing must be configurable.
+
+---
+
+# Inference Engine
+
+Implement:
+
+* async inference
+* streaming responses
+* cancellation tokens
+* timeout handling
+* graceful shutdown
+* retries where appropriate
+* structured logging
+* metrics
+* thread-safe access
+
+Never block the UI thread.
+
+---
+
+# Intent Detection
+
+Do NOT send every request to the LLM.
+
+Implement a layered intent detector.
+
+Pipeline:
+
+User Input
+
+↓
+
+Rules
+
+↓
+
+Regex
+
+↓
+
+Lightweight classifier
+
+↓
+
+LLM only if needed
+
+Examples that should NOT invoke the LLM:
+
+Open Chrome
+
+Open Calculator
+
+Volume Up
+
+Mute
+
+Shutdown
+
+Restart
+
+Open Downloads
+
+Open Documents
+
+Launch VS Code
+
+Open Spotify
+
+Open Settings
+
+Take Screenshot
+
+Lock PC
+
+Clipboard actions
+
+File operations
+
+These should execute instantly.
+
+---
+
+# Structured Actions
+
+The LLM must NEVER generate free-form commands for execution.
+
+It must return structured JSON only.
+
+Example:
+
+{
+"intent":"open_application",
+"application":"chrome",
+"confidence":0.99
+}
+
+Validate every response.
+
+Reject malformed outputs.
+
+Retry if invalid.
+
+Never execute arbitrary text.
+
+Implement schema validation.
+
+---
+
+# Prompt Management
+
+Separate:
+
+System prompts
+
+Developer prompts
+
+Task prompts
+
+Tool prompts
+
+JSON templates
+
+Prompt versions
+
+Allow future editing without recompilation.
+
+---
+
+# Conversation Memory
+
+Replace chat history accumulation with retrieval memory.
+
+Implement SQLite.
+
+Store:
+
+conversation
+
+summary
+
+embeddings
+
+timestamps
+
+metadata
+
+Implement Retrieval-Augmented Generation.
+
+Workflow:
+
+Store conversation
+
+↓
+
+Generate embedding
+
+↓
+
+SQLite
+
+↓
+
+Semantic retrieval
+
+↓
+
+Relevant context only
+
+↓
+
+LLM
+
+Never send the entire conversation.
+
+Automatically summarize old conversations.
+
+Configurable retention.
+
+---
+
+# Embeddings
+
+Implement a lightweight embedding model.
+
+Requirements:
+
+* CPU optimized
+* GGUF compatible
+* offline
+* cached embeddings
+* cosine similarity search
+
+Integrate with SQLite retrieval.
+
+---
+
+# Text-to-Speech
+
+Integrate Piper.
+
+Requirements:
+
+offline
+
+low latency
+
+voice selection
+
+streaming playback
+
+queue support
+
+interrupt support
+
+volume control
+
+Do NOT implement Speech-to-Text.
+
+---
+
+# Response Streaming
+
+Stream tokens directly into the UI.
+
+No waiting for complete responses.
+
+Support cancellation.
+
+---
+
+# Error Handling
+
+Implement robust error handling.
+
+Include:
+
+timeouts
+
+model loading failures
+
+memory exhaustion
+
+invalid JSON
+
+invalid prompts
+
+missing model
+
+corrupt GGUF
+
+SQLite failures
+
+embedding failures
+
+Provide meaningful diagnostics and graceful recovery wherever possible.
+
+---
+
+# Performance Optimization
+
+Optimize for CPU-only systems.
+
+Requirements:
+
+thread tuning
+
+context optimization
+
+batch optimization
+
+KV cache reuse
+
+lazy loading
+
+model caching
+
+memory pooling
+
+minimal allocations
+
+fast startup
+
+low idle RAM usage
+
+---
+
+# Configuration
+
+Create a central configuration system.
+
+Configurable:
+
+default model
+
+embedding model
+
+context size
+
+threads
+
+batch size
+
+GPU layers
+
+temperature
+
+top_p
+
+top_k
+
+repeat penalty
+
+max tokens
+
+voice
+
+SQLite location
+
+model directory
+
+logging level
+
+No hardcoded values.
+
+---
+
+# Logging
+
+Implement structured logging.
+
+Log:
+
+loaded model
+
+unloaded model
+
+latency
+
+tokens/sec
+
+memory usage
+
+retrieval time
+
+embedding time
+
+errors
+
+tool execution
+
+JSON validation failures
+
+---
+
+# Project Cleanup
+
+Remove dead code.
+
+Remove obsolete wrappers.
+
+Remove duplicate utilities.
+
+Simplify architecture.
+
+Refactor repeated logic.
+
+Improve naming consistency.
+
+Improve dependency injection.
+
+Improve folder structure.
+
+---
+
+# Documentation
+
+Update:
+
+README
+
+architecture diagrams
+
+installation
+
+configuration
+
+developer guide
+
+migration guide
+
+No Ollama references should remain.
+
+---
+
+# Final Validation Checklist
+
+Verify that:
+
+✓ No Ollama dependency remains.
+
+✓ No localhost:11434 calls exist.
+
+✓ llama.cpp performs all inference.
+
+✓ Existing models remain usable.
+
+✓ Streaming works.
+
+✓ Cancellation works.
+
+✓ SQLite retrieval works.
+
+✓ Embeddings work.
+
+✓ Piper works.
+
+✓ Intent detection bypasses the LLM for deterministic commands.
+
+✓ JSON output validation is enforced.
+
+✓ Conversation summarization works.
+
+✓ Configuration is centralized.
+
+✓ Logging is comprehensive.
+
+✓ CPU performance is improved.
+
+✓ Memory usage is lower than the previous Ollama implementation.
+
+✓ The assistant remains fully offline.
+
+✓ The project builds successfully.
+
+✓ All existing functionality continues to work after migration.
+
+Finally, provide a detailed migration report summarizing:
+
+* every file modified,
+* every Ollama dependency removed,
+* every new component added,
+* any assumptions made,
+* and any manual steps required (if any) to complete the transition.
