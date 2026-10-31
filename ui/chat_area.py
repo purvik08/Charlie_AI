@@ -61,7 +61,7 @@ class _MessageBubble(tk.Frame):
             'border':    COLORS['bubble_asst_border'],
             'fg':        COLORS['text_primary'],
             'label_fg':  COLORS['accent_green'],
-            'label':     'ARIA',
+            'label':     'Charlie',
         },
         'system': {
             'anchor':    'center',

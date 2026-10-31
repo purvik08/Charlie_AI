@@ -48,6 +48,10 @@ app.add_typer(apps_app, name="app")
 from cli.commands.chat import app as chat_app
 app.add_typer(chat_app, name="chat")
 
+# Register search subcommand (GPT Researcher)
+from cli.commands.search import app as search_app
+app.add_typer(search_app, name="search")
+
 # Version command
 @app.command()
 def version():

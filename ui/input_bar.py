@@ -76,7 +76,7 @@ class InputBar(tk.Frame):
             bd=4,
         )
         self._entry.pack(fill=tk.BOTH, expand=True)
-        self._entry.insert(0, 'Message ARIA…')
+        self._entry.insert(0, 'Message Charlie…')
         self._entry.config(fg=COLORS['text_muted'])
         self._placeholder_on = True
 
@@ -123,7 +123,7 @@ class InputBar(tk.Frame):
     def _on_focus_out(self, _event) -> None:
         if not self._entry.get().strip():
             self._entry.delete(0, tk.END)
-            self._entry.insert(0, 'Message ARIA…')
+            self._entry.insert(0, 'Message Charlie…')
             self._entry.config(fg=COLORS['text_muted'])
             self._placeholder_on = True
 

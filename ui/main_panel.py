@@ -6,7 +6,7 @@ The main glassmorphism chat window that expands from the floating orb.
 Layout (top → bottom)
 ----------------------
   ┌──────────────────────────────────────────┐
-  │  ◉ ARIA · Offline AI Assistant  [—] [✕] │  ← HeaderBar  (draggable)
+  │  ◉ Charlie · Offline AI Assistant  [—] [✕] │  ← HeaderBar  (draggable)
   ├──────────────────────────────────────────┤
   │  [🕐 Time] [📅 Date] [📋 Todos] …      │  ← QuickActions
   ├──────────────────────────────────────────┤
@@ -14,7 +14,7 @@ Layout (top → bottom)
   │  < message bubbles (scrollable) >        │  ← ChatArea
   │                                          │
   ├──────────────────────────────────────────┤
-  │  [ Message ARIA… ……………………… ] [  ➤  ]  │  ← InputBar
+  │  [ Message Charlie… ……………………… ] [  ➤  ]  │  ← InputBar
   └──────────────────────────────────────────┘
 
 Public classes
@@ -56,7 +56,7 @@ class _HeaderBar(tk.Frame):
     Supports drag-to-move the parent window.
     """
 
-    def __init__(self, parent_window: tk.Toplevel, on_minimize, on_close):
+    def __init__(self, parent_window: tk.Toplevel, on_minimize, on_close, on_quit):
         super().__init__(
             parent_window,
             bg=COLORS['bg_header'],
@@ -67,7 +67,7 @@ class _HeaderBar(tk.Frame):
         self._drag_x     = 0
         self._drag_y     = 0
 
-        self._build(on_minimize, on_close)
+        self._build(on_minimize, on_close, on_quit)
 
         # Bind drag on the whole header
         self.bind('<ButtonPress-1>',  self._drag_start)
@@ -75,7 +75,7 @@ class _HeaderBar(tk.Frame):
 
     # ------------------------------------------------------------------
 
-    def _build(self, on_minimize, on_close) -> None:
+    def _build(self, on_minimize, on_close, on_quit) -> None:
         # Bottom border line
         tk.Frame(self, bg=COLORS['border_subtle'], height=1).pack(
             side=tk.BOTTOM, fill=tk.X)
@@ -96,7 +96,7 @@ class _HeaderBar(tk.Frame):
         # Name
         tk.Label(
             left,
-            text='ARIA',
+            text='Charlie',
             font=FONTS['header'],
             bg=COLORS['bg_header'],
             fg=COLORS['text_accent'],
@@ -114,7 +114,22 @@ class _HeaderBar(tk.Frame):
         right = tk.Frame(self, bg=COLORS['bg_header'])
         right.pack(side=tk.RIGHT, padx=8, fill=tk.Y)
 
-        # Close button
+        # Shutdown / quit button  (⏻ — fully exits the app)
+        quit_btn = tk.Label(
+            right, text='  ⏻  ',
+            font=FONTS['small_bold'],
+            bg=COLORS['bg_header'],
+            fg=COLORS['accent_red'],
+            cursor='hand2',
+        )
+        quit_btn.pack(side=tk.RIGHT, pady=16)
+        quit_btn.bind('<Enter>',    lambda _e: quit_btn.config(
+            bg='#3a0a0a', fg='#ff4444'))
+        quit_btn.bind('<Leave>',    lambda _e: quit_btn.config(
+            bg=COLORS['bg_header'], fg=COLORS['accent_red']))
+        quit_btn.bind('<Button-1>', lambda _e: on_quit())
+
+        # Close / hide button  (✕ — hides the panel back to orb)
         close_btn = tk.Label(
             right, text='  ✕  ',
             font=FONTS['small_bold'],
@@ -124,7 +139,7 @@ class _HeaderBar(tk.Frame):
         )
         close_btn.pack(side=tk.RIGHT, pady=16)
         close_btn.bind('<Enter>',    lambda _e: close_btn.config(
-            bg=COLORS['btn_close_hover'], fg=COLORS['accent_red']))
+            bg=COLORS['bg_glass_light'], fg=COLORS['text_primary']))
         close_btn.bind('<Leave>',    lambda _e: close_btn.config(
             bg=COLORS['bg_header'],      fg=COLORS['text_secondary']))
         close_btn.bind('<Button-1>', lambda _e: on_close())
@@ -211,16 +226,18 @@ class MainPanel:
     assistant  : OfflineAssistant instance
     engine     : AnimationEngine (shared)
     orb        : FloatingWidget (used to position the panel beside the orb)
-    on_close   : callable() — called when user closes the panel
+    on_close   : callable() — called when user hides the panel
+    on_quit    : callable() — called when user confirms full shutdown
     """
 
     def __init__(self, root, assistant, engine: AnimationEngine,
-                 orb: FloatingWidget, on_close):
+                 orb: FloatingWidget, on_close, on_quit):
         self._root      = root
         self._assistant = assistant
         self._engine    = engine
         self._orb       = orb
         self._on_close  = on_close
+        self._quit_cb   = on_quit   # stored separately to avoid name clash with _on_quit()
         self._queue     = queue.Queue()
         self._last_resp = ''
 
@@ -238,7 +255,7 @@ class MainPanel:
         # Welcome message
         self._chat.add_message(
             'assistant',
-            'Hello! I\'m ARIA — your offline AI assistant. '
+            'Hello! I\'m Charlie — your offline AI assistant. '
             'Ask me anything, or use the quick buttons above.',
         )
 
@@ -285,6 +302,7 @@ class MainPanel:
             self._win,
             on_minimize=self._hide,
             on_close=self._close,
+            on_quit=self._on_quit,
         )
         self._header.pack(side=tk.TOP, fill=tk.X)
 
@@ -371,8 +389,22 @@ class MainPanel:
         self._on_close()
 
     def _close(self) -> None:
+        """Hide the panel (collapse back to the floating orb)."""
         self.hide()
         self._on_close()
+
+    def _on_quit(self) -> None:
+        """Ask for confirmation then fully shut down the application."""
+        if messagebox.askyesno(
+            'Shut Down Charlie',
+            'Are you sure you want to completely shut down Charlie?\n\n'
+            'All background processes will be stopped.',
+            icon='warning',
+            parent=self._win,
+        ):
+            self.hide()
+            # Give the fade-out animation a moment, then call the exit callback.
+            self._root.after(300, self._quit_cb)
 
     # ------------------------------------------------------------------
     # Message handling
@@ -484,7 +516,7 @@ class FloatingAssistantGUI:
         # Hidden master root (keeps the app alive without its own window)
         self._root = tk.Tk()
         self._root.withdraw()
-        self._root.title('ARIA — Offline AI Assistant')
+        self._root.title('Charlie — Offline AI Assistant')
         self._root.protocol('WM_DELETE_WINDOW', self._quit)
 
         # Shared animation engine
@@ -500,6 +532,7 @@ class FloatingAssistantGUI:
             engine=self._engine,
             orb=self._orb,
             on_close=self._on_panel_closed,
+            on_quit=self._exit_app,
         )
 
         # Start reminder callback routing
@@ -566,7 +599,7 @@ class FloatingAssistantGUI:
         )
 
         # Create tray icon
-        self._tray_icon = pystray.Icon("aria_assistant", image, "ARIA - AI Assistant", menu)
+        self._tray_icon = pystray.Icon("charlie_assistant", image, "Charlie - AI Assistant", menu)
 
         # Start the tray icon in a separate thread
         threading.Thread(target=self._tray_icon.run, daemon=True).start()

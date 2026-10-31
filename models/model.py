@@ -42,7 +42,7 @@ class ModelSettings:
     top_k: int = 40
     repeat_penalty: float = 1.1
     max_tokens: int = 256
-    timeout_seconds: int = 30
+    timeout_seconds: int = 120
 
 
 @dataclass
@@ -93,6 +93,7 @@ class LlamaCppEngine:
         self.settings = settings
         self._lock = threading.RLock()
         self._llama = None
+        self._needs_reload = False
         self._load()
 
     def _load(self) -> None:
@@ -132,10 +133,14 @@ class LlamaCppEngine:
     ) -> str:
         if not prompt.strip():
             return ""
-        if self._llama is None:
-            self._load()
 
         with self._lock:
+            # Reload the model if a previous request left it in a dirty state
+            # (e.g. a timeout broke out of the streaming loop mid-generation).
+            if self._llama is None or self._needs_reload:
+                self._needs_reload = False
+                self._load()
+
             start = time.perf_counter()
             chunks: List[str] = []
             try:
@@ -167,10 +172,22 @@ class LlamaCppEngine:
                         stream_callback(token)
 
                 text = "".join(chunks).strip()
-                if timed_out and not text:
-                    raise InferenceError(
-                        f"Inference timed out after {settings.timeout_seconds} seconds"
+
+                if timed_out:
+                    # Mark the engine dirty so it reloads before the next call.
+                    # The streaming generator may still hold internal C++ state,
+                    # so we must not reuse the model instance as-is.
+                    self._needs_reload = True
+                    if not text:
+                        text = (
+                            "[Response timed out — the model is taking too long. "
+                            "Try a shorter question or switch to a smaller model.]"
+                        )
+                    logger.warning(
+                        "inference_timeout_partial",
+                        extra={"model_path": str(self.model_path), "chars": len(text)},
                     )
+
                 latency = time.perf_counter() - start
                 logger.info(
                     "inference_complete",
@@ -182,12 +199,16 @@ class LlamaCppEngine:
                 )
                 return text
             except Exception as exc:
+                # On any unexpected error also flag a reload so the next call
+                # starts with a clean model state.
+                self._needs_reload = True
                 logger.exception("inference_failed", extra={"model_path": str(self.model_path)})
                 raise InferenceError(f"llama.cpp inference failed: {exc}") from exc
 
     def unload(self) -> None:
         with self._lock:
             self._llama = None
+            self._needs_reload = False
 
 
 class ModelManager:
@@ -220,10 +241,18 @@ class ModelManager:
         )
 
     def _model_dirs_from_config(self) -> List[Path]:
-        dirs = [Path(p).expanduser() for p in self.config.get("model_directories", ["./models"])]
+        # Resolve relative paths against the project root (parent of this file's directory)
+        # so that "./models" works regardless of the CWD when the app is launched.
+        project_root = Path(__file__).resolve().parent.parent
+        resolved = []
+        for p in self.config.get("model_directories", ["./models"]):
+            path = Path(p).expanduser()
+            if not path.is_absolute():
+                path = (project_root / path).resolve()
+            resolved.append(path)
         if self.config.get("discover_existing_model_blobs", True):
-            dirs.append(Path.home() / ".ollama" / "models" / "blobs")
-        return dirs
+            resolved.append(Path.home() / ".ollama" / "models" / "blobs")
+        return resolved
 
     def discover_models(self) -> Dict[str, ModelInfo]:
         discovered: Dict[str, ModelInfo] = {}

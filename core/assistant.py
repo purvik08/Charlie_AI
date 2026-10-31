@@ -446,6 +446,10 @@ class OfflineAssistant:
     _REMIND_RE = re.compile(
         r"^remind me(?: to)?\s+(.+?)(?:\s+in\s+(\d+)\s*(minutes?|mins?|hours?|hrs?))?$")
     _OPEN_RE = re.compile(r"^(?:open|launch|start)\s+(.+)$")
+    _WEB_SEARCH_RE = re.compile(
+        r"^(?:search(?:\s+the)?\s+web\s+for|search\s+online\s+for|web\s+search\s+for|web\s+search"
+        r"|google\s+for|google|research\s+about|research\s+on|research\s+for|research"
+        r"|search\s+internet\s+for|search\s+for|search)\s+(.+)$")
 
     def __init__(self, config_path: Optional[str] = None, data_dir: Optional[str] = None):
         self.config = AppConfig(Path(config_path)) if config_path else AppConfig()
@@ -454,6 +458,7 @@ class OfflineAssistant:
 
         self.tts = None
         self.file_search = None
+        self.web_search = None
         self.system_info = SystemInfo()
         self.note_taking = None
         self.todo_list = None
@@ -520,6 +525,12 @@ class OfflineAssistant:
                 self.memory = RetrievalMemory(str(self.data_dir / "chat.db"))
             except Exception as e:
                 print(f"Failed to initialize RetrievalMemory: {e}")
+        if self.config.get("features.web_search", True):
+            try:
+                from features.web_search.gpt_researcher_adapter import GPTResearcherAdapter
+                self.web_search = GPTResearcherAdapter(str(self.data_dir))
+            except Exception as e:
+                print(f"Failed to initialize GPTResearcherAdapter: {e}")
 
     def shutdown(self) -> None:
         """Stop background work and release the model."""
@@ -735,6 +746,14 @@ class OfflineAssistant:
             return self._request_confirmation("lock")
         if name == "system_power":
             return self._request_confirmation(intent.slots.get("action", "shutdown"))
+        if name == "web_search":
+            blocked = self._gate("web_search", self.web_search, "web search")
+            if blocked:
+                return blocked
+            query = intent.slots.get("query", "").strip()
+            if not query:
+                return "Please specify what you would like to search for."
+            return self.web_search.search(query, model_manager=self.model_manager)
         return None
 
     def _route_rules(self, raw: str, lowered: str) -> Optional[str]:
@@ -747,6 +766,15 @@ class OfflineAssistant:
             if not self._enabled("time_telling"):
                 return self._disabled_message("time and date")
             return f"Today is {datetime.datetime.now().strftime('%A, %B %d, %Y')}"
+
+        match = self._WEB_SEARCH_RE.match(lowered)
+        if match:
+            blocked = self._gate("web_search", self.web_search, "web search")
+            if blocked:
+                return blocked
+            query = match.group(1).strip()
+            if not query.startswith(("file ", "files ", "note ", "notes ", "todo", "todos")):
+                return self.web_search.search(query, model_manager=self.model_manager)
 
         match = self._FIND_RE.match(lowered)
         if match:

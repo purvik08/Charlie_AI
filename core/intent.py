@@ -23,7 +23,7 @@ class IntentDetector:
         command = text.strip()
         lowered = command.lower()
 
-        if lowered in {"hello", "hi", "hey", "hello aria", "hi aria"}:
+        if lowered in {"hello", "hi", "hey", "hello aria", "hi aria", "hello charlie", "hi charlie"}:
             return IntentResult("greeting", 1.0, {})
         if lowered in {"volume up", "increase volume"}:
             return IntentResult("volume_up", 0.98, {})
@@ -41,6 +41,10 @@ class IntentDetector:
             if match:
                 return IntentResult(intent, 0.98, match.groupdict())
 
+        search_query = self._match_web_search(lowered)
+        if search_query is not None:
+            return IntentResult("web_search", 0.98, {"query": search_query})
+
         task = self._match_task(lowered)
         if task is not None:
             return IntentResult("add_todo", 0.95, {"task": task})
@@ -55,6 +59,40 @@ class IntentDetector:
             return IntentResult("battery", 0.98, {})
 
         return IntentResult("chat", 0.5, {}, requires_llm=True)
+
+    @staticmethod
+    def _match_web_search(lowered: str) -> Optional[str]:
+        cleaned = lowered.rstrip("?.! ")
+        prefixes = (
+            "search the web for", "search web for", "search online for",
+            "search the internet for", "search internet for",
+            "web search for", "web search", "search web",
+            "google for", "google",
+            "research about", "research on", "research for", "research",
+            "look up online", "look up on the web", "look up on internet",
+            "search for", "search",
+        )
+        for prefix in prefixes:
+            if cleaned.startswith(prefix + " "):
+                q = cleaned[len(prefix):].strip()
+                if q.startswith(("file ", "files ", "note ", "notes ", "todo", "todos")):
+                    continue
+                return q or None
+
+        postfixes = (
+            " on the web", " on the internet", " online", " on google",
+        )
+        for postfix in postfixes:
+            if cleaned.endswith(postfix):
+                base = cleaned[:-len(postfix)].strip()
+                for lead in ("search for ", "search ", "find ", "look up "):
+                    if base.startswith(lead):
+                        base = base[len(lead):].strip()
+                        break
+                if base and not base.startswith(("file ", "files ", "note ", "notes ")):
+                    return base
+
+        return None
 
     @staticmethod
     def _match_task(lowered: str) -> Optional[str]:

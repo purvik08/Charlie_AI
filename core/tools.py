@@ -658,6 +658,26 @@ def create_standard_tools(registry: ToolRegistry, assistant: Any = None) -> int:
         )
         registry.register(list_reminders_tool)
         count += 1
+
+    # Web Search tool (GPT Researcher)
+    if getattr(assistant, "web_search", None):
+        def web_search_handler(query: str) -> str:
+            try:
+                return assistant.web_search.search(query, model_manager=getattr(assistant, "model_manager", None))
+            except Exception as e:
+                return f"Web search error: {str(e)}"
+
+        web_search_tool = FunctionTool(
+            name="web_search",
+            description="Search the web for up-to-date information, news, or answers using GPT Researcher",
+            parameters=[
+                ToolParameter(name="query", type="string", description="Search query or research question", required=True),
+            ],
+            function=web_search_handler,
+            safety_level=TOOL_SAFETY_SAFE,
+        )
+        registry.register(web_search_tool)
+        count += 1
     
     logger.info("standard_tools_created", extra={"count": count})
     return count
