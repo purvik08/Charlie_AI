@@ -1,13 +1,22 @@
 import json
 import os
+import sys
 from pathlib import Path
 from typing import Any, Dict, Optional
+
+def default_config_path() -> Path:
+    """Use a writable per-user config location when running a packaged EXE."""
+    if getattr(sys, "frozen", False):
+        base = Path(os.environ.get("LOCALAPPDATA", Path.home())) / "Charlie_AI"
+        return base / "config.json"
+    return Path("config.json")
+
 
 class Config:
     """Handle configuration for the assistant."""
 
-    def __init__(self, config_file: Path = Path("config.json")):
-        self.config_file = config_file
+    def __init__(self, config_file: Optional[Path] = None):
+        self.config_file = Path(config_file) if config_file else default_config_path()
         self.config = self.load_config()
         self._load_env_vars()
 
@@ -37,6 +46,13 @@ class Config:
             "ocr_engine": "auto",  # auto | glm_ocr | paddleocr
             "ocr_model_dir": "models/image_to_text",
             "ocr_max_new_tokens": 2048,
+            "user_profile": {
+                "name": "",
+                "occupation": "",
+            },
+            "onboarding": {
+                "completed": False,
+            },
             "screen_capture": {
                 "retain_captures": False,
                 "max_captures": 10,

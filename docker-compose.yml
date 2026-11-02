@@ -1,0 +1,12 @@
+services:
+  charlie:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    image: charlie-ai:local
+    stdin_open: true
+    tty: true
+    volumes:
+      - ./charlie_data:/data
+      - ./models:/app/models:ro
+      - ./docker/config.json:/app/config.json:ro

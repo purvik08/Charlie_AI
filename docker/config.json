@@ -1,0 +1,26 @@
+{
+  "data_dir": "/data",
+  "model_directories": ["/app/models"],
+  "ocr_model_dir": "/app/models/image_to_text",
+  "default_model": "tinyllama",
+  "model_routing": {
+    "simple": "tinyllama",
+    "complex": "gemma-3-4b-it"
+  },
+  "prefer_colibri": false,
+  "features": {
+    "file_search": true,
+    "system_info": true,
+    "note_taking": true,
+    "todo_list": true,
+    "reminders": true,
+    "time_telling": true,
+    "open_apps": false,
+    "play_music": false,
+    "ocr": true,
+    "screen_reader": false,
+    "web_search": false,
+    "document_parser": true,
+    "colibri": false
+  }
+}

@@ -37,6 +37,7 @@ flowchart TD
 | Intent routing | `core/intent.py` plus strict command rules in the assistant |
 | Desktop UI | `ui/`: floating orb, panel, input bar, quick actions, drag/drop |
 | CLI | `cli/main.py` and `cli/commands/` using Typer |
+| Windows delivery | Native PowerShell setup/run scripts; `scripts/build-windows-exe.ps1` creates a portable `dist\\Charlie` desktop folder. Its first-launch wizard attaches local models and stores the user profile in per-user configuration. Docker Desktop Compose remains for headless CLI workflows. |
 | Local chat | `models/model.py` with `llama-cpp-python` and GGUF assets |
 | Model delegation | Colibri is preferred for free-form chat whenever its local server is available. Otherwise `core/complexity.py` sends simple chat to TinyLlama and long, multi-step, code/structured, or analytical requests to the configured complex route. A missing explicit route returns an error rather than silently downgrading. |
 | Alternative local server | `features/local_llm/colibri_adapter.py` |

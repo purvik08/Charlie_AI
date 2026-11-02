@@ -232,6 +232,42 @@ python -m cli.main --help
 # or simply: charlie --help
 ```
 
+### Windows and Docker Desktop
+
+For a repeatable native Windows desktop setup, run:
+
+```powershell
+Set-ExecutionPolicy -Scope Process Bypass
+.\scripts\setup-windows.ps1
+.\scripts\run-windows.ps1
+```
+
+For Docker Desktop CLI workflows, build the image and run a command:
+
+```powershell
+docker compose build
+.\scripts\run-docker.ps1 todo list
+```
+
+Docker mounts local models and workspace data instead of copying them into the
+image. The desktop GUI, screen reading, drag-and-drop, tray integration, and
+native Windows app controls should use the native setup. See
+[Windows run guide](docs/windows-run.md) for the full setup and limitations.
+
+### Build a Windows EXE
+
+After native setup, generate a portable desktop build with:
+
+```powershell
+.\scripts\build-windows-exe.ps1
+```
+
+The generated launcher is `dist\Charlie\Charlie.exe`. On its first launch it
+opens a local setup wizard: select the chat GGUF, coding/complex GGUF, and
+GLM-OCR `model.safetensors` files, then enter your name and occupation. Charlie
+references those model files in place—it does not duplicate their multi-gigabyte
+contents—and only then starts the desktop app.
+
 ## 🧠 Local LLM Setup
 
 Charlie uses **llama-cpp-python** for local GGUF model inference. TinyLlama is

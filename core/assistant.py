@@ -993,6 +993,12 @@ class OfflineAssistant:
                 "You are Charlie, a helpful local-first assistant. "
                 "Keep responses concise, practical, and honest about limitations."
             )
+            user_name = str(self.config.get("user_profile.name", "")).strip()
+            occupation = str(self.config.get("user_profile.occupation", "")).strip()
+            if user_name:
+                system += f" The user's name is {user_name}."
+            if occupation:
+                system += f" Their occupation is {occupation}."
             if self.memory:
                 try:
                     related = self.memory.retrieve(raw, limit=2)

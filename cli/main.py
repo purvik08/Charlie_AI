@@ -74,13 +74,19 @@ def version():
 
 from ui import FloatingAssistantGUI
 from core.assistant import OfflineAssistant
+from config.config import Config
+from ui.onboarding import run_first_launch_wizard
 
 
 def run_gui():
     """Run the GUI application."""
     try:
-        # Initialize the assistant
-        assistant = OfflineAssistant()
+        config = Config()
+        if not run_first_launch_wizard(config):
+            return
+
+        # Load the assistant after first-launch paths/profile are saved.
+        assistant = OfflineAssistant(config_path=str(config.config_file))
 
         # Create and run the GUI
         gui_app = FloatingAssistantGUI(assistant)

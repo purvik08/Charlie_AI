@@ -18,6 +18,9 @@ an available local model.
   locally and extracts its visible text through the OCR stack; captures are
   temporary by default.
 - Optional Docling parsing and GPT Researcher web/deep research.
+- Windows delivery helpers: native PowerShell setup/run scripts, an EXE build
+  script with first-launch model/profile onboarding, and a Docker Desktop CLI
+  image that mounts models and workspace data.
 
 ## Repository conventions
 

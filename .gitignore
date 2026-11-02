@@ -113,6 +113,8 @@ offline_assistant_data/
 *.db
 *.json
 logs/
+build/
+dist/
 *.log
 
 # SQLite database files
@@ -137,6 +139,8 @@ config/.env
 offline_assistant_data/
 *.gguf
 models/image_to_text/model.safetensors
+!config.example.json
+!docker/config.json
 PaddleOCR-main/
 colibri-main/
 docling-main/

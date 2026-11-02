@@ -1,0 +1,28 @@
+{
+  "data_dir": "./charlie_data",
+  "model_directories": ["./models"],
+  "default_model": "tinyllama",
+  "model_routing": {
+    "simple": "tinyllama",
+    "complex": "gemma-3-4b-it"
+  },
+  "allow_task_fallback": false,
+  "max_loaded_models": 1,
+  "prefer_colibri": true,
+  "ocr_engine": "auto",
+  "ocr_model_dir": "models/image_to_text",
+  "user_profile": {
+    "name": "",
+    "occupation": ""
+  },
+  "onboarding": {
+    "completed": false
+  },
+  "features": {
+    "web_search": false,
+    "ocr": true,
+    "screen_reader": true,
+    "document_parser": true,
+    "colibri": true
+  }
+}
