@@ -38,11 +38,12 @@ class InputBar(tk.Frame):
     on_send : callable(text: str) — called with the trimmed input text
     """
 
-    def __init__(self, parent, on_send):
+    def __init__(self, parent, on_send, on_attach=None):
         super().__init__(parent, bg=COLORS['bg_header'], height=INPUT_H)
         self.pack_propagate(False)
-        self._on_send  = on_send
-        self._enabled  = True
+        self._on_send   = on_send
+        self._on_attach = on_attach
+        self._enabled   = True
         self._build()
 
     # ------------------------------------------------------------------
@@ -54,7 +55,24 @@ class InputBar(tk.Frame):
         tk.Frame(self, bg=COLORS['border_subtle'], height=1).pack(fill=tk.X)
 
         inner = tk.Frame(self, bg=COLORS['bg_header'])
-        inner.pack(fill=tk.BOTH, expand=True, padx=10, pady=8)
+        inner.pack(fill=tk.BOTH, expand=True, padx=12, pady=8)
+
+        # ── Attach / file-picker button (📎) ─────────────────────────
+        self._attach_btn = tk.Label(
+            inner,
+            text=' 📎 ',
+            font=FONTS['btn'],
+            bg=COLORS['bg_raised'],
+            fg=COLORS['text_secondary'],
+            padx=6,
+            pady=6,
+            cursor='hand2',
+            relief=tk.FLAT,
+        )
+        self._attach_btn.pack(side=tk.LEFT, padx=(0, 6))
+        self._attach_btn.bind('<Enter>',    self._attach_enter)
+        self._attach_btn.bind('<Leave>',    self._attach_leave)
+        self._attach_btn.bind('<Button-1>', self._attach_click)
 
         # ── Entry field ───────────────────────────────────────────────
         entry_frame = tk.Frame(
@@ -66,6 +84,7 @@ class InputBar(tk.Frame):
         )
         entry_frame.pack(side=tk.LEFT, fill=tk.BOTH, expand=True, padx=(0, 8))
 
+
         self._entry = tk.Entry(
             entry_frame,
             bg=COLORS['bg_input'],
@@ -76,7 +95,7 @@ class InputBar(tk.Frame):
             bd=4,
         )
         self._entry.pack(fill=tk.BOTH, expand=True)
-        self._entry.insert(0, 'Message Charlie…')
+        self._entry.insert(0, 'Ask Charlie anything…')
         self._entry.config(fg=COLORS['text_muted'])
         self._placeholder_on = True
 
@@ -95,9 +114,9 @@ class InputBar(tk.Frame):
         # ── Send button ───────────────────────────────────────────────
         self._send_btn = tk.Label(
             inner,
-            text='  ➤  ',
+            text=' Send ',
             font=FONTS['btn'],
-            bg=COLORS['accent_cyan'],
+            bg=COLORS['btn_primary_bg'],
             fg=COLORS['btn_primary_fg'],
             padx=10,
             pady=6,
@@ -109,6 +128,28 @@ class InputBar(tk.Frame):
         self._send_btn.bind('<Enter>',    self._btn_enter)
         self._send_btn.bind('<Leave>',    self._btn_leave)
         self._send_btn.bind('<Button-1>', lambda _e: self._submit())
+
+    # ------------------------------------------------------------------
+    # Attach button helpers
+    # ------------------------------------------------------------------
+
+    def _attach_enter(self, _event=None) -> None:
+        if self._enabled:
+            self._attach_btn.config(
+                bg=COLORS['bg_glass_light'],
+                fg=COLORS['accent_cyan'],
+            )
+
+    def _attach_leave(self, _event=None) -> None:
+        if self._enabled:
+            self._attach_btn.config(
+                bg=COLORS['bg_raised'],
+                fg=COLORS['text_secondary'],
+            )
+
+    def _attach_click(self, _event=None) -> None:
+        if self._enabled and self._on_attach:
+            self._on_attach()
 
     # ------------------------------------------------------------------
     # Placeholder helpers
@@ -123,7 +164,7 @@ class InputBar(tk.Frame):
     def _on_focus_out(self, _event) -> None:
         if not self._entry.get().strip():
             self._entry.delete(0, tk.END)
-            self._entry.insert(0, 'Message Charlie…')
+            self._entry.insert(0, 'Ask Charlie anything…')
             self._entry.config(fg=COLORS['text_muted'])
             self._placeholder_on = True
 
@@ -137,7 +178,7 @@ class InputBar(tk.Frame):
 
     def _btn_leave(self, _event) -> None:
         if self._enabled:
-            self._send_btn.config(bg=COLORS['accent_cyan'])
+            self._send_btn.config(bg=COLORS['btn_primary_bg'])
 
     # ------------------------------------------------------------------
     # Submit
@@ -167,10 +208,15 @@ class InputBar(tk.Frame):
 
         if enabled:
             self._send_btn.config(
-                bg=COLORS['accent_cyan'],
+                bg=COLORS['btn_primary_bg'],
                 fg=COLORS['btn_primary_fg'],
                 cursor='hand2',
-                text='  ➤  ',
+                text=' Send ',
+            )
+            self._attach_btn.config(
+                bg=COLORS['bg_raised'],
+                fg=COLORS['text_secondary'],
+                cursor='hand2',
             )
         else:
             self._send_btn.config(
@@ -179,6 +225,12 @@ class InputBar(tk.Frame):
                 cursor='',
                 text='  ⋯  ',
             )
+            self._attach_btn.config(
+                bg=COLORS['bg_header'],
+                fg=COLORS['text_muted'],
+                cursor='',
+            )
+
 
     def focus_input(self) -> None:
         """Move keyboard focus into the text entry."""

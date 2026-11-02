@@ -21,6 +21,9 @@ class Config:
             "wake_word": "assistant",  # kept for compatibility but not used
             "memory_limit": 100,  # number of interactions to remember
             "data_dir": str(Path.home() / "offline_assistant_data"),
+            "ocr_engine": "auto",  # auto | glm_ocr | paddleocr
+            "ocr_model_dir": "models/image_to_text",
+            "ocr_max_new_tokens": 2048,
             "features": {
                 "file_search": True,
                 "system_info": True,

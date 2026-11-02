@@ -20,16 +20,19 @@ TRANSPARENT_KEY = '#010203'
 COLORS = {
     # ── Core Backgrounds ───────────────────────────────────────────────────
     'transparent':          '#010203',   # window transparency key
-    'bg_root':              '#050810',   # deepest background
-    'bg_panel':             '#080f1e',   # main panel background
-    'bg_header':            '#060c18',   # header / footer strips
-    'bg_glass':             '#0a1628',   # glass card background
-    'bg_glass_light':       '#0f1e38',   # lighter glass variant
-    'bg_input':             '#060d1a',   # input field background
+    'bg_root':              '#030712',   # deepest background
+    'bg_panel':             '#081120',   # main panel background
+    'bg_header':            '#091424',   # header / footer strips
+    'bg_glass':             '#0d1b31',   # glass card background
+    'bg_glass_light':       '#122642',   # lighter glass variant
+    'bg_input':             '#06101f',   # input field background
+    'bg_raised':            '#0b1930',   # elevated controls / cards
+    'bg_drop_overlay':      '#030810',   # drag-and-drop overlay background (near-opaque dark)
+
 
     # ── Borders & Glow ────────────────────────────────────────────────────
-    'border_subtle':        '#1a2d4a',   # subtle divider
-    'border_mid':           '#243d60',   # mid-strength border
+    'border_subtle':        '#1b3150',   # subtle divider
+    'border_mid':           '#2a4870',   # mid-strength border
     'border_cyan_glow':     '#00d4ff',   # cyan glowing border
     'border_violet_glow':   '#7c3aed',   # violet glowing border
     'border_green_glow':    '#00ff88',   # green glowing border
@@ -48,24 +51,24 @@ COLORS = {
     'accent_yellow':        '#ffd700',   # warning / busy
 
     # ── Text ──────────────────────────────────────────────────────────────
-    'text_primary':         '#e2e8f0',   # main body text
-    'text_secondary':       '#94a3b8',   # secondary / dimmed text
-    'text_muted':           '#475569',   # very muted (timestamps, hints)
+    'text_primary':         '#edf5ff',   # main body text
+    'text_secondary':       '#9aadc5',   # secondary / dimmed text
+    'text_muted':           '#61738d',   # very muted (timestamps, hints)
     'text_accent':          '#00d4ff',   # accent text (AI name, labels)
     'text_green':           '#00ff88',   # success / assistant name
 
     # ── Message Bubbles ───────────────────────────────────────────────────
-    'bubble_user_bg':       '#0a1e3a',   # user message background
+    'bubble_user_bg':       '#0b2747',   # user message background
     'bubble_user_border':   '#00d4ff',   # user message border
-    'bubble_asst_bg':       '#071a10',   # assistant message background
-    'bubble_asst_border':   '#00ff88',   # assistant message border
+    'bubble_asst_bg':       '#0a1d1c',   # assistant message background
+    'bubble_asst_border':   '#20c997',   # assistant message border
     'bubble_sys_bg':        '#1a0e2e',   # system message background
     'bubble_sys_border':    '#7c3aed',   # system message border
 
     # ── Buttons ───────────────────────────────────────────────────────────
-    'btn_primary_bg':       '#00d4ff',   # filled primary button
+    'btn_primary_bg':       '#19c6e8',   # filled primary button
     'btn_primary_fg':       '#020810',   # text on filled button
-    'btn_primary_hover':    '#00aacc',   # hover state
+    'btn_primary_hover':    '#56d9f2',   # hover state
     'btn_ghost_bg':         '#0a1628',   # ghost / outline button bg
     'btn_ghost_fg':         '#00d4ff',   # ghost button text/border
     'btn_ghost_hover':      '#0f1e38',   # ghost hover bg
@@ -86,7 +89,7 @@ COLORS = {
 
     # ── Scrollbar ─────────────────────────────────────────────────────────
     'scrollbar_bg':         '#080f1e',
-    'scrollbar_thumb':      '#1e3a5f',
+    'scrollbar_thumb':      '#28466e',
     'scrollbar_thumb_hover':'#00d4ff',
 }
 
@@ -121,12 +124,12 @@ WIDGET_H = 80        # orb window height (px)
 ORB_RADIUS = 32      # circle radius drawn on canvas
 
 # Main chat panel
-PANEL_W = 420        # panel window width  (px)
-PANEL_H = 660        # panel window height (px)
+PANEL_W = 460        # panel window width  (px)
+PANEL_H = 700        # panel window height (px)
 PANEL_CORNER = 16    # panel corner radius for glass background
 
 # Chat area
-MSG_MAX_WIDTH = 300  # max message bubble width (px)
+MSG_MAX_WIDTH = 330  # max message bubble width (px)
 MSG_PAD_X = 12       # bubble horizontal padding
 MSG_PAD_Y = 8        # bubble vertical padding
 BUBBLE_CORNER = 10   # bubble corner radius
@@ -135,7 +138,7 @@ BUBBLE_CORNER = 10   # bubble corner radius
 HEADER_H = 52        # header bar height (px)
 
 # Quick actions row
-QA_H = 44            # quick-action row height (px)
+QA_H = 52            # quick-action row height (px)
 
 # Input bar
 INPUT_H = 56         # input bar height (px)

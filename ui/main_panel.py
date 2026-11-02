@@ -44,6 +44,12 @@ from .floating_widget import FloatingWidget
 from .chat_area      import ChatArea
 from .quick_actions  import QuickActions
 from .input_bar      import InputBar
+from .drag_drop      import DragDropManager, DND_AVAILABLE
+
+try:
+    from tkinterdnd2 import TkinterDnD  # type: ignore
+except ImportError:
+    TkinterDnD = None
 
 
 # ---------------------------------------------------------------------------
@@ -104,7 +110,7 @@ class _HeaderBar(tk.Frame):
 
         tk.Label(
             left,
-            text='  ·  Offline AI',
+            text='  ·  Private on-device AI',
             font=FONTS['subheader'],
             bg=COLORS['bg_header'],
             fg=COLORS['text_muted'],
@@ -240,8 +246,16 @@ class MainPanel:
         self._quit_cb   = on_quit   # stored separately to avoid name clash with _on_quit()
         self._queue     = queue.Queue()
         self._last_resp = ''
+        self._dnd       = None       # DragDropManager, set after _build()
 
-        self._win = tk.Toplevel(root)
+        # Use a DnD-aware Toplevel when tkinterdnd2 is available
+        if DND_AVAILABLE and TkinterDnD is not None:
+            try:
+                self._win = TkinterDnD.Toplevel(root)
+            except Exception:
+                self._win = tk.Toplevel(root)
+        else:
+            self._win = tk.Toplevel(root)
         self._win.overrideredirect(True)
         self._win.wm_attributes('-topmost', True)
         self._win.wm_attributes('-alpha', 0.97)
@@ -250,13 +264,22 @@ class MainPanel:
 
         self._position_near_orb()
         self._build()
+
+        # ── Drag-and-drop ─────────────────────────────────────────────
+        self._dnd = DragDropManager(
+            window=self._win,
+            chat_frame=self._chat.inner_frame(),  # the scrollable inner frame
+            on_drop=self._on_drop,
+            on_pick_path=self._on_drop,
+        )
+
         self._start_queue_poll()
 
         # Welcome message
         self._chat.add_message(
             'assistant',
             'Hello! I\'m Charlie — your offline AI assistant. '
-            'Ask me anything, or use the quick buttons above.',
+            'Ask me anything, drag-and-drop a file, or use the quick buttons above.',
         )
 
     # ------------------------------------------------------------------
@@ -315,7 +338,11 @@ class MainPanel:
         self._chat.pack(side=tk.TOP, fill=tk.BOTH, expand=True)
 
         # ── Input bar ─────────────────────────────────────────────────
-        self._input = InputBar(content, on_send=self._on_send)
+        self._input = InputBar(
+            content,
+            on_send=self._on_send,
+            on_attach=self._on_attach_file,
+        )
         self._input.pack(side=tk.BOTTOM, fill=tk.X)
 
     def _position_near_orb(self) -> None:
@@ -410,6 +437,20 @@ class MainPanel:
     # Message handling
     # ------------------------------------------------------------------
 
+    # ------------------------------------------------------------------ drop
+    def _on_drop(self, command: str) -> None:
+        """Called when a file is dropped or picked via the file dialog."""
+        # Auto-show the panel if it's hidden
+        if not self._win.winfo_viewable():
+            self.show()
+        self._on_send(command)
+
+    def _on_attach_file(self) -> None:
+        """Open the file-picker dialog (attach button in input bar)."""
+        if self._dnd:
+            self._dnd.open_file_picker()
+
+    # ------------------------------------------------------------------ send
     def _on_send(self, text: str) -> None:
         """Called when user submits a message."""
         if not text.strip():
@@ -513,8 +554,15 @@ class FloatingAssistantGUI:
         self._assistant    = assistant
         self._panel_open   = False
 
-        # Hidden master root (keeps the app alive without its own window)
-        self._root = tk.Tk()
+        # Hidden master root — upgrade to TkinterDnD.Tk when available so
+        # the entire application hierarchy supports native drag-and-drop.
+        if DND_AVAILABLE and TkinterDnD is not None:
+            try:
+                self._root = TkinterDnD.Tk()
+            except Exception:
+                self._root = tk.Tk()
+        else:
+            self._root = tk.Tk()
         self._root.withdraw()
         self._root.title('Charlie — Offline AI Assistant')
         self._root.protocol('WM_DELETE_WINDOW', self._quit)

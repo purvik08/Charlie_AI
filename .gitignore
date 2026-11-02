@@ -136,5 +136,9 @@ dist/
 config/.env
 offline_assistant_data/
 *.gguf
+models/image_to_text/model.safetensors
+PaddleOCR-main/
+colibri-main/
+docling-main/
 *.egg-info/
 __pycache__/

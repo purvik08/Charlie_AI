@@ -52,6 +52,19 @@ app.add_typer(chat_app, name="chat")
 from cli.commands.search import app as search_app
 app.add_typer(search_app, name="search")
 
+# Register OCR subcommand (PaddleOCR)
+from cli.commands.ocr import app as ocr_app
+app.add_typer(ocr_app, name="ocr")
+
+# Register document parsing subcommand (Docling)
+from cli.commands.parse import app as parse_app
+app.add_typer(parse_app, name="parse")
+
+# Register Colibri local LLM subcommand
+from cli.commands.colibri import app as colibri_app
+app.add_typer(colibri_app, name="colibri")
+
+
 # Version command
 @app.command()
 def version():

@@ -355,3 +355,7 @@ class ChatArea(tk.Frame):
     def _scroll_to_bottom(self) -> None:
         self._inner.update_idletasks()
         self._canvas.yview_moveto(1.0)
+
+    def inner_frame(self) -> tk.Frame:
+        """Return the scrollable inner frame (used by DragDropManager for overlay placement)."""
+        return self._canvas   # overlay sits on the canvas so it covers the full chat viewport

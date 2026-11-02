@@ -450,6 +450,21 @@ class OfflineAssistant:
         r"^(?:search(?:\s+the)?\s+web\s+for|search\s+online\s+for|web\s+search\s+for|web\s+search"
         r"|google\s+for|google|research\s+about|research\s+on|research\s+for|research"
         r"|search\s+internet\s+for|search\s+for|search)\s+(.+)$")
+    # OCR patterns: "ocr <file>", "read text from <file>", "extract text from <file>"
+    _OCR_RE = re.compile(
+        r"^(?:ocr|read text from|extract text from|scan text from|recognize text in)"
+        r"\s+(.+)$")
+    # Document parsing: "parse <file>", "read document <file>", "convert <file> to text"
+    _DOC_PARSE_RE = re.compile(
+        r"^(?:parse|read document|read doc|convert document|convert doc|open document|open doc"
+        r"|summarize document|summarize doc|show document|show doc|load document|load doc)\s+(.+)$")
+    # Deep research pattern
+    _DEEP_RESEARCH_RE = re.compile(
+        r"^(?:deep research|deep dive|thorough research|full research|detailed research"
+        r"|write report|research report)\s+(?:on|about|for)?\s*(.+)$")
+    # Colibri / local LLM management
+    _COLIBRI_RE = re.compile(
+        r"^(?:colibri|local llm|local model)(?: (?P<action>status|start|stop|models|help))?$")
 
     def __init__(self, config_path: Optional[str] = None, data_dir: Optional[str] = None):
         self.config = AppConfig(Path(config_path)) if config_path else AppConfig()
@@ -459,6 +474,9 @@ class OfflineAssistant:
         self.tts = None
         self.file_search = None
         self.web_search = None
+        self.ocr = None
+        self.document_parser = None
+        self.colibri = None
         self.system_info = SystemInfo()
         self.note_taking = None
         self.todo_list = None
@@ -531,6 +549,46 @@ class OfflineAssistant:
                 self.web_search = GPTResearcherAdapter(str(self.data_dir))
             except Exception as e:
                 print(f"Failed to initialize GPTResearcherAdapter: {e}")
+        if self.config.get("features.ocr", True):
+            try:
+                from features.ocr.paddleocr_adapter import PaddleOCRAdapter
+                fallback_ocr = PaddleOCRAdapter(
+                    lang=self.config.get("ocr_lang", "en"),
+                    use_gpu=self.config.get("ocr_use_gpu", False),
+                    data_dir=str(self.data_dir / "ocr"),
+                )
+                ocr_engine = str(self.config.get("ocr_engine", "auto")).lower()
+                if ocr_engine in {"auto", "glm", "glm_ocr", "glm-ocr"}:
+                    from features.ocr.glm_ocr_adapter import GLMOCRAdapter
+                    self.ocr = GLMOCRAdapter(
+                        model_dir=self.config.get("ocr_model_dir", "models/image_to_text"),
+                        fallback=fallback_ocr,
+                        strict=ocr_engine != "auto",
+                        max_new_tokens=int(self.config.get("ocr_max_new_tokens", 2048)),
+                    )
+                else:
+                    self.ocr = fallback_ocr
+            except Exception as e:
+                print(f"Failed to initialize PaddleOCRAdapter: {e}")
+        if self.config.get("features.document_parser", True):
+            try:
+                from features.document_parser.docling_adapter import DoclingAdapter
+                self.document_parser = DoclingAdapter(
+                    output_format=self.config.get("doc_output_format", "markdown"),
+                    data_dir=str(self.data_dir / "documents"),
+                )
+            except Exception as e:
+                print(f"Failed to initialize DoclingAdapter: {e}")
+        if self.config.get("features.colibri", True):
+            try:
+                from features.local_llm.colibri_adapter import ColibriAdapter
+                self.colibri = ColibriAdapter(
+                    base_url=self.config.get(
+                        "colibri_base_url", "http://127.0.0.1:8000/v1"
+                    ),
+                )
+            except Exception as e:
+                print(f"Failed to initialize ColibriAdapter: {e}")
 
     def shutdown(self) -> None:
         """Stop background work and release the model."""
@@ -754,6 +812,26 @@ class OfflineAssistant:
             if not query:
                 return "Please specify what you would like to search for."
             return self.web_search.search(query, model_manager=self.model_manager)
+        if name == "ocr":
+            blocked = self._gate("ocr", self.ocr, "OCR")
+            if blocked:
+                return blocked
+            path_str = intent.slots.get("path", "").strip()
+            if not path_str:
+                return "Please provide a file path to perform OCR on."
+            return self.ocr.extract_text(path_str)
+        if name == "document_parse":
+            blocked = self._gate("document_parser", self.document_parser, "document parser")
+            if blocked:
+                return blocked
+            path_str = intent.slots.get("path", "").strip()
+            if not path_str:
+                return "Please provide a document file path."
+            return self.document_parser.convert(path_str)
+        if name == "colibri_status":
+            if self.colibri is None:
+                return "Colibri adapter is not initialised."
+            return self.colibri.status()
         return None
 
     def _route_rules(self, raw: str, lowered: str) -> Optional[str]:
@@ -767,6 +845,16 @@ class OfflineAssistant:
                 return self._disabled_message("time and date")
             return f"Today is {datetime.datetime.now().strftime('%A, %B %d, %Y')}"
 
+        # Deep research
+        match = self._DEEP_RESEARCH_RE.match(lowered)
+        if match:
+            blocked = self._gate("web_search", self.web_search, "web search")
+            if blocked:
+                return blocked
+            topic = match.group(1).strip()
+            return self.web_search.deep_research(topic, model_manager=self.model_manager)
+
+        # Standard web search
         match = self._WEB_SEARCH_RE.match(lowered)
         if match:
             blocked = self._gate("web_search", self.web_search, "web search")
@@ -775,6 +863,43 @@ class OfflineAssistant:
             query = match.group(1).strip()
             if not query.startswith(("file ", "files ", "note ", "notes ", "todo", "todos")):
                 return self.web_search.search(query, model_manager=self.model_manager)
+
+        # OCR
+        match = self._OCR_RE.match(lowered)
+        if match:
+            blocked = self._gate("ocr", self.ocr, "OCR")
+            if blocked:
+                return blocked
+            path_str = match.group(1).strip()
+            return self.ocr.extract_text(path_str)
+
+        # Document parsing
+        match = self._DOC_PARSE_RE.match(lowered)
+        if match:
+            blocked = self._gate("document_parser", self.document_parser, "document parser")
+            if blocked:
+                return blocked
+            path_str = match.group(1).strip()
+            return self.document_parser.convert(path_str)
+
+        # Colibri management
+        match = self._COLIBRI_RE.match(text)
+        if match:
+            if self.colibri is None:
+                return "Colibri adapter is not initialised."
+            action = match.group("action") or "status"
+            if action == "start":
+                return self.colibri.start_server()
+            if action == "stop":
+                return self.colibri.stop_server()
+            if action == "models":
+                models = self.colibri.get_models(refresh=True)
+                if not models:
+                    return "No models listed (server may not be running)."
+                return "Colibri models:\n" + "\n".join(f"  - {m}" for m in models)
+            if action == "help":
+                return self.colibri.start_guide()
+            return self.colibri.status()
 
         match = self._FIND_RE.match(lowered)
         if match:

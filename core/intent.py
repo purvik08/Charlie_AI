@@ -36,6 +36,14 @@ class IntentDetector:
         if lowered in {"shutdown", "shutdown pc", "restart", "restart pc"}:
             return IntentResult("system_power", 0.95, {"action": lowered.split()[0]})
 
+        # Colibri / local LLM management
+        colibri_match = re.match(
+            r"^(?:colibri|local llm|local model)(?: (status|start|stop|models|help))?$", lowered
+        )
+        if colibri_match:
+            action = colibri_match.group(1) or "status"
+            return IntentResult("colibri_status", 0.98, {"action": action})
+
         for pattern, intent in self._APP_PATTERNS:
             match = pattern.match(lowered)
             if match:
@@ -44,6 +52,16 @@ class IntentDetector:
         search_query = self._match_web_search(lowered)
         if search_query is not None:
             return IntentResult("web_search", 0.98, {"query": search_query})
+
+        # OCR intent
+        ocr_path = self._match_ocr(lowered)
+        if ocr_path is not None:
+            return IntentResult("ocr", 0.97, {"path": ocr_path})
+
+        # Document parsing intent
+        doc_path = self._match_document_parse(lowered)
+        if doc_path is not None:
+            return IntentResult("document_parse", 0.97, {"path": doc_path})
 
         task = self._match_task(lowered)
         if task is not None:
@@ -95,6 +113,47 @@ class IntentDetector:
         return None
 
     @staticmethod
+    def _match_ocr(lowered: str) -> Optional[str]:
+        """Extract the file path from an OCR command."""
+        prefixes = (
+            "ocr ",
+            "read text from ",
+            "extract text from ",
+            "scan text from ",
+            "recognize text in ",
+            "recognise text in ",
+        )
+        for prefix in prefixes:
+            if lowered.startswith(prefix):
+                path = lowered[len(prefix):].strip()
+                return path or None
+        return None
+
+    @staticmethod
+    def _match_document_parse(lowered: str) -> Optional[str]:
+        """Extract the file path from a document-parsing command."""
+        prefixes = (
+            "parse ",
+            "read document ",
+            "read doc ",
+            "convert document ",
+            "convert doc ",
+            "open document ",
+            "open doc ",
+            "summarize document ",
+            "summarize doc ",
+            "show document ",
+            "show doc ",
+            "load document ",
+            "load doc ",
+        )
+        for prefix in prefixes:
+            if lowered.startswith(prefix):
+                path = lowered[len(prefix):].strip()
+                return path or None
+        return None
+
+    @staticmethod
     def _match_task(lowered: str) -> Optional[str]:
         prefixes = (
             "add a todo", "add todo", "add a task", "add task",
@@ -108,4 +167,3 @@ class IntentDetector:
                         task = task[len(filler):].strip()
                 return task or None
         return None
-

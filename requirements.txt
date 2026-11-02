@@ -1,23 +1,58 @@
-# Core requirements
+# ── Core ─────────────────────────────────────────────────────────────────────
 pyttsx3>=2.90
 requests>=2.28.1
 
-# GUI (Tkinter is usually included with Python)
-# For systems where it's not included, you may need to install python3-tk
-
-# System tray functionality
+# ── GUI (Tkinter is bundled with Python on Windows) ──────────────────────────
+# python3-tk  # Linux/macOS: install separately if needed
 pystray>=0.19.0
 Pillow>=9.0.0
 
-# Optional but recommended for enhanced functionality
-psutil>=5.9.0  # For system information and battery monitoring
+# ── System utilities ─────────────────────────────────────────────────────────
+psutil>=5.9.0        # CPU, memory, battery monitoring
 
-# Local LLM inference
-llama-cpp-python>=0.2.0
+# ── Local LLM inference ──────────────────────────────────────────────────────
+llama-cpp-python>=0.2.0   # GGUF model inference
 
-# CLI
+# ── CLI ───────────────────────────────────────────────────────────────────────
 typer>=0.9.0
 rich>=13.0.0
 
-# For type hints (development)
+# ── Drag-and-drop (GUI) ───────────────────────────────────────────────────────
+tkinterdnd2>=0.4.2   # Native OS file drag-and-drop for Tkinter windows
+
+# ── Type hints ────────────────────────────────────────────────────────────────
 typing_extensions>=4.5.0; python_version < "3.10"
+
+# ── Web search & GPT Researcher ──────────────────────────────────────────────
+# gpt-researcher            # bundled locally in gpt-researcher-main/
+# tavily-python             # optional: install for Tavily search provider
+# langchain                 # optional: install for LangChain integrations
+
+# ── OCR (PaddleOCR or pytesseract fallback) ──────────────────────────────────
+# paddlepaddle              # optional: CPU-only: pip install paddlepaddle
+# paddleocr>=2.7.0          # optional: pip install paddleocr
+# pytesseract               # optional fallback: pip install pytesseract Pillow
+
+# ── GLM-OCR image-to-text model (models/image_to_text/model.safetensors) ───
+# Required only when using ocr_engine=glm_ocr or the `ocr glm` command.
+transformers>=5.3.0
+torch>=2.4.0
+accelerate>=1.0.0
+safetensors>=0.5.0
+huggingface_hub>=0.30.0
+
+# ── Document parsing (Docling) ───────────────────────────────────────────────
+# docling                   # optional: pip install docling
+# python-docx               # fallback DOCX parser: pip install python-docx
+# python-pptx               # fallback PPTX parser: pip install python-pptx
+# openpyxl                  # fallback XLSX parser: pip install openpyxl
+# PyMuPDF                   # fallback PDF parser:  pip install pymupdf
+# pdfplumber                # alt PDF parser:       pip install pdfplumber
+# ebooklib                  # EPUB parser:          pip install EbookLib
+
+# ── Colibri local MoE LLM ────────────────────────────────────────────────────
+# (no Python package needed — Colibri is a binary engine)
+# Launch colibri-main/START-HERE.bat to start the OpenAI-compatible server
+
+# ── Memory / RAG ─────────────────────────────────────────────────────────────
+# (SQLite is built into Python; no extra install needed)

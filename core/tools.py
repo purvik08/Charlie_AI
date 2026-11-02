@@ -678,6 +678,128 @@ def create_standard_tools(registry: ToolRegistry, assistant: Any = None) -> int:
         )
         registry.register(web_search_tool)
         count += 1
-    
+
+        def deep_research_handler(topic: str) -> str:
+            try:
+                return assistant.web_search.deep_research(
+                    topic, model_manager=getattr(assistant, "model_manager", None)
+                )
+            except Exception as e:
+                return f"Deep research error: {str(e)}"
+
+        deep_research_tool = FunctionTool(
+            name="deep_research",
+            description="Conduct thorough multi-source research on a topic and return a detailed report",
+            parameters=[
+                ToolParameter(name="topic", type="string", description="Research topic or question", required=True),
+            ],
+            function=deep_research_handler,
+            safety_level=TOOL_SAFETY_SAFE,
+        )
+        registry.register(deep_research_tool)
+        count += 1
+
+    # OCR tool (PaddleOCR)
+    if getattr(assistant, "ocr", None):
+        def ocr_handler(file_path: str) -> str:
+            try:
+                return assistant.ocr.extract_text(file_path)
+            except Exception as e:
+                return f"OCR error: {str(e)}"
+
+        ocr_tool = FunctionTool(
+            name="extract_text_from_image",
+            description=(
+                "Extract text from an image or scanned PDF using OCR (PaddleOCR). "
+                "Supports PNG, JPG, JPEG, BMP, TIFF, WEBP, PDF and more."
+            ),
+            parameters=[
+                ToolParameter(
+                    name="file_path",
+                    type="string",
+                    description="Absolute or relative path to the image or PDF file",
+                    required=True,
+                ),
+            ],
+            function=ocr_handler,
+            safety_level=TOOL_SAFETY_SAFE,
+        )
+        registry.register(ocr_tool)
+        count += 1
+
+    # Document parser tool (Docling)
+    if getattr(assistant, "document_parser", None):
+        def document_parse_handler(file_path: str) -> str:
+            try:
+                return assistant.document_parser.convert(file_path)
+            except Exception as e:
+                return f"Document parsing error: {str(e)}"
+
+        doc_tool = FunctionTool(
+            name="parse_document",
+            description=(
+                "Parse and convert a document to Markdown or plain text using Docling. "
+                "Supports PDF, DOCX, PPTX, XLSX, HTML, EPUB, TXT, images, and more."
+            ),
+            parameters=[
+                ToolParameter(
+                    name="file_path",
+                    type="string",
+                    description="Absolute or relative path to the document, or a URL",
+                    required=True,
+                ),
+            ],
+            function=document_parse_handler,
+            safety_level=TOOL_SAFETY_SAFE,
+        )
+        registry.register(doc_tool)
+        count += 1
+
+    # Colibri local LLM tool
+    if getattr(assistant, "colibri", None):
+        def colibri_status_handler() -> str:
+            try:
+                return assistant.colibri.status()
+            except Exception as e:
+                return f"Colibri status error: {str(e)}"
+
+        colibri_status_tool = FunctionTool(
+            name="colibri_status",
+            description="Check the status of the Colibri local LLM server and list available models",
+            parameters=[],
+            function=colibri_status_handler,
+            safety_level=TOOL_SAFETY_SAFE,
+        )
+        registry.register(colibri_status_tool)
+        count += 1
+
+        def colibri_chat_handler(message: str) -> str:
+            try:
+                if not assistant.colibri.is_server_running():
+                    return assistant.colibri.start_guide()
+                return assistant.colibri.chat(message)
+            except Exception as e:
+                return f"Colibri chat error: {str(e)}"
+
+        colibri_chat_tool = FunctionTool(
+            name="colibri_chat",
+            description=(
+                "Send a message to the Colibri local LLM engine "
+                "(GLM, DeepSeek, Qwen3, OLMoE, etc.) running on this machine"
+            ),
+            parameters=[
+                ToolParameter(
+                    name="message",
+                    type="string",
+                    description="Message to send to the local Colibri LLM",
+                    required=True,
+                ),
+            ],
+            function=colibri_chat_handler,
+            safety_level=TOOL_SAFETY_SAFE,
+        )
+        registry.register(colibri_chat_tool)
+        count += 1
+
     logger.info("standard_tools_created", extra={"count": count})
     return count

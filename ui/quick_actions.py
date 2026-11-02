@@ -21,12 +21,12 @@ from .widgets import draw_rounded_rect
 # Preset shortcuts — edit freely
 # ---------------------------------------------------------------------------
 ACTIONS = [
-    ('Time',    'What is the current time?'),
-    ('Date',    'What is today\'s date?'),
-    ('Todos',   'List todos'),
-    ('System',  'system info'),
-    ('Battery', 'battery status'),
-    ('Notes',   'List my notes'),
+    ('◷  Time',    'What is the current time?'),
+    ('▣  Date',    'What is today\'s date?'),
+    ('✓  Todos',   'List todos'),
+    ('⌁  System',  'system info'),
+    ('⌁  Battery', 'battery status'),
+    ('✎  Notes',   'List my notes'),
 ]
 
 
@@ -41,7 +41,7 @@ class QuickActions(tk.Frame):
     """
 
     def __init__(self, parent, on_command):
-        super().__init__(parent, bg=COLORS['bg_header'], height=44)
+        super().__init__(parent, bg=COLORS['bg_header'], height=52)
         self.pack_propagate(False)
         self._on_command = on_command
         self._build()
@@ -49,13 +49,22 @@ class QuickActions(tk.Frame):
     # ------------------------------------------------------------------
 
     def _build(self) -> None:
-        # Subtle top border
-        separator = tk.Frame(self, bg=COLORS['border_subtle'], height=1)
-        separator.pack(fill=tk.X, side=tk.TOP)
+        # A small label establishes the shortcuts as optional helpers rather
+        # than competing with the conversation itself.
+        top = tk.Frame(self, bg=COLORS['bg_header'])
+        top.pack(fill=tk.X, padx=12, pady=(5, 0))
+        tk.Label(
+            top, text='QUICK ACTIONS', font=FONTS['tiny'],
+            bg=COLORS['bg_header'], fg=COLORS['text_muted'],
+        ).pack(side=tk.LEFT)
+        tk.Label(
+            top, text='One-click tools', font=FONTS['tiny'],
+            bg=COLORS['bg_header'], fg=COLORS['text_muted'],
+        ).pack(side=tk.RIGHT)
 
         # Scrollable inner row (in case buttons overflow)
         container = tk.Frame(self, bg=COLORS['bg_header'])
-        container.pack(fill=tk.BOTH, expand=True, padx=6)
+        container.pack(fill=tk.BOTH, expand=True, padx=9, pady=(0, 3))
 
         for label, command in ACTIONS:
             self._make_button(container, label, command)
@@ -66,21 +75,21 @@ class QuickActions(tk.Frame):
             parent,
             text=label,
             font=FONTS['quick_btn'],
-            bg=COLORS['bg_glass'],
+            bg=COLORS['bg_raised'],
             fg=COLORS['text_secondary'],
-            padx=8,
+            padx=7,
             pady=3,
             cursor='hand2',
             relief=tk.FLAT,
         )
-        btn.pack(side=tk.LEFT, padx=3, pady=8)
+        btn.pack(side=tk.LEFT, padx=2, pady=3)
 
         # Hover effect
         def on_enter(_e):
             btn.config(bg=COLORS['bg_glass_light'], fg=COLORS['accent_cyan'])
 
         def on_leave(_e):
-            btn.config(bg=COLORS['bg_glass'],      fg=COLORS['text_secondary'])
+            btn.config(bg=COLORS['bg_raised'],     fg=COLORS['text_secondary'])
 
         def on_click(_e):
             self._on_command(command)
