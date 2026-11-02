@@ -17,6 +17,7 @@ from typing import Optional, List, Dict, Any
 
 # Import our modules
 from config.config import Config as AppConfig
+from core.complexity import ComplexityRouter
 from core.intent import IntentDetector
 from core.memory import RetrievalMemory
 
@@ -475,6 +476,7 @@ class OfflineAssistant:
         self.file_search = None
         self.web_search = None
         self.ocr = None
+        self.screen_reader = None
         self.document_parser = None
         self.colibri = None
         self.system_info = SystemInfo()
@@ -484,6 +486,10 @@ class OfflineAssistant:
         self.model_manager = None
         self.memory = None
         self.intent_detector = IntentDetector()
+        self.complexity_router = ComplexityRouter(
+            self.config.get("complexity_router", {})
+        )
+        self.last_model_route = None
         self.conversation_history: List[Dict[str, str]] = []
         self.memory_limit = self.config.get("memory_limit", 100)
         self._pending_action: Optional[str] = None
@@ -570,6 +576,20 @@ class OfflineAssistant:
                     self.ocr = fallback_ocr
             except Exception as e:
                 print(f"Failed to initialize PaddleOCRAdapter: {e}")
+        if self.config.get("features.screen_reader", True):
+            try:
+                from features.screen_reader import ScreenReader
+                capture_config = self.config.get("screen_capture", {})
+                self.screen_reader = ScreenReader(
+                    self.ocr,
+                    self.data_dir,
+                    retain_captures=bool(capture_config.get("retain_captures", False)),
+                    max_captures=int(capture_config.get("max_captures", 10)),
+                    retention_days=int(capture_config.get("retention_days", 7)),
+                    mode=str(capture_config.get("mode", "primary")),
+                )
+            except Exception as e:
+                print(f"Failed to initialize ScreenReader: {e}")
         if self.config.get("features.document_parser", True):
             try:
                 from features.document_parser.docling_adapter import DoclingAdapter
@@ -800,6 +820,16 @@ class OfflineAssistant:
             return self._open_folder(intent.slots.get("folder", ""))
         if name in ("volume_up", "mute", "take_screenshot"):
             return self.UNSUPPORTED_REPLY
+        if name == "read_screen":
+            blocked = self._gate("screen_reader", self.screen_reader, "screen reader")
+            if blocked:
+                return blocked
+            return self.screen_reader.read_current_screen()
+        if name == "clear_screen_captures":
+            blocked = self._gate("screen_reader", self.screen_reader, "screen reader")
+            if blocked:
+                return blocked
+            return self.screen_reader.clear_captures()
         if name == "lock_pc":
             return self._request_confirmation("lock")
         if name == "system_power":
@@ -958,7 +988,12 @@ class OfflineAssistant:
         if not self.model_manager:
             return "I'm not sure how to help with that. Try asking about time, date, system info, or to-do list."
         try:
-            system = "You are a helpful offline assistant. Keep responses concise and helpful."
+            decision = self.complexity_router.classify(raw)
+            self.last_model_route = decision
+            system = (
+                "You are Charlie, a helpful local-first assistant. "
+                "Keep responses concise, practical, and honest about limitations."
+            )
             if self.memory:
                 try:
                     related = self.memory.retrieve(raw, limit=2)
@@ -971,6 +1006,6 @@ class OfflineAssistant:
                 messages.append({"role": "user", "content": exchange["user"]})
                 messages.append({"role": "assistant", "content": exchange["assistant"]})
             messages.append({"role": "user", "content": raw})
-            return self.model_manager.chat(messages).strip()
+            return self.model_manager.chat(messages, task=decision.task).strip()
         except Exception as e:
             return f"I'm having trouble processing that request: {e}"

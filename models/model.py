@@ -137,7 +137,7 @@ class LlamaCppEngine:
         with self._lock:
             # Reload the model if a previous request left it in a dirty state
             # (e.g. a timeout broke out of the streaming loop mid-generation).
-            if self._llama is None or self._needs_reload:
+            if self._llama is None or getattr(self, "_needs_reload", False):
                 self._needs_reload = False
                 self._load()
 
@@ -179,9 +179,9 @@ class LlamaCppEngine:
                     # so we must not reuse the model instance as-is.
                     self._needs_reload = True
                     if not text:
-                        text = (
-                            "[Response timed out — the model is taking too long. "
-                            "Try a shorter question or switch to a smaller model.]"
+                        raise InferenceError(
+                            "Response timed out before the model generated text. "
+                            "Try a shorter question or switch to a smaller model."
                         )
                     logger.warning(
                         "inference_timeout_partial",
@@ -219,6 +219,8 @@ class ModelManager:
         self.settings = self._settings_from_config()
         self.model_dirs = self._model_dirs_from_config()
         self.routing = self.config.get("model_routing", {})
+        self.allow_task_fallback = bool(self._config_get("allow_task_fallback", False))
+        self.max_loaded_models = max(1, int(self._config_get("max_loaded_models", 1)))
         self.models: Dict[str, ModelInfo] = {}
         self.engines: Dict[str, LlamaCppEngine] = {}
         self.stats: Dict[str, InferenceStats] = {}
@@ -226,18 +228,36 @@ class ModelManager:
         self._lock = threading.RLock()
         self.discover_models()
 
+    def _config_get(self, key: str, default: Any = None) -> Any:
+        """Read a dotted setting from either ``Config`` or a plain mapping."""
+        getter = getattr(self.config, "get", None)
+        if not callable(getter):
+            return default
+        try:
+            direct = getter(key, None)
+        except TypeError:
+            direct = None
+        if direct is not None:
+            return direct
+        current: Any = self.config
+        for part in key.split("."):
+            if not isinstance(current, dict) or part not in current:
+                return default
+            current = current[part]
+        return current
+
     def _settings_from_config(self) -> ModelSettings:
         return ModelSettings(
-            context_size=int(self.config.get("llama.context_size", 2048)),
-            threads=int(self.config.get("llama.threads", max(1, (os.cpu_count() or 2) - 1))),
-            batch_size=int(self.config.get("llama.batch_size", 128)),
-            gpu_layers=int(self.config.get("llama.gpu_layers", 0)),
-            temperature=float(self.config.get("llama.temperature", 0.7)),
-            top_p=float(self.config.get("llama.top_p", 0.9)),
-            top_k=int(self.config.get("llama.top_k", 40)),
-            repeat_penalty=float(self.config.get("llama.repeat_penalty", 1.1)),
-            max_tokens=int(self.config.get("llama.max_tokens", 256)),
-            timeout_seconds=int(self.config.get("llama.timeout_seconds", 30)),
+            context_size=int(self._config_get("llama.context_size", 2048)),
+            threads=int(self._config_get("llama.threads", max(1, (os.cpu_count() or 2) - 1))),
+            batch_size=int(self._config_get("llama.batch_size", 128)),
+            gpu_layers=int(self._config_get("llama.gpu_layers", 0)),
+            temperature=float(self._config_get("llama.temperature", 0.7)),
+            top_p=float(self._config_get("llama.top_p", 0.9)),
+            top_k=int(self._config_get("llama.top_k", 40)),
+            repeat_penalty=float(self._config_get("llama.repeat_penalty", 1.1)),
+            max_tokens=int(self._config_get("llama.max_tokens", 256)),
+            timeout_seconds=int(self._config_get("llama.timeout_seconds", 30)),
         )
 
     def _model_dirs_from_config(self) -> List[Path]:
@@ -339,6 +359,8 @@ class ModelManager:
             for name in self.models:
                 if normalised in name:
                     return name
+            if task in self.routing and not self.allow_task_fallback:
+                return None
         if self.models:
             return sorted(self.models.keys(), key=lambda n: self.models[n].size_bytes)[0]
         return None
@@ -347,10 +369,19 @@ class ModelManager:
         model_name = self._normalise_name(name) if name else self.resolve_model_name(task)
         if not model_name or model_name not in self.models:
             available = ", ".join(sorted(self.models)) or "none"
+            if task in self.routing and not self.allow_task_fallback:
+                expected = self.routing[task]
+                raise InferenceError(
+                    f"The configured {task} model '{expected}' is unavailable. "
+                    f"Available models: {available}"
+                )
             raise InferenceError(f"No GGUF model is configured for {task}. Available models: {available}")
 
         with self._lock:
             if model_name not in self.engines:
+                while len(self.engines) >= self.max_loaded_models:
+                    oldest_name = next(iter(self.engines))
+                    self.unload_model(oldest_name)
                 self.engines[model_name] = LlamaCppEngine(self.models[model_name].path, self.settings)
                 self.models[model_name].loaded = True
                 self.stats.setdefault(model_name, InferenceStats()).load_count += 1
@@ -428,7 +459,8 @@ class ModelManager:
         stream_callback: Optional[Callable[[str], None]] = None,
         cancel_token: Optional[CancellationToken] = None,
     ) -> str:
-        prompt = self.format_chat_prompt(messages)
+        model_name = self.resolve_model_name(task)
+        prompt = self.format_chat_prompt(messages, model_name=model_name)
         return self.generate(
             prompt,
             task=task,
@@ -437,7 +469,13 @@ class ModelManager:
         )
 
     @staticmethod
-    def format_chat_prompt(messages: List[Dict[str, str]]) -> str:
+    def format_chat_prompt(messages: List[Dict[str, str]], model_name: Optional[str] = None) -> str:
+        """Render a prompt using a safe template for known local model families."""
+        family = (model_name or "").lower()
+        if "tinyllama" in family:
+            return ModelManager._format_tinyllama_prompt(messages)
+        if "gemma" in family:
+            return ModelManager._format_gemma_prompt(messages)
         rendered = []
         for message in messages:
             role = message.get("role", "user").strip().lower()
@@ -446,6 +484,40 @@ class ModelManager:
                 continue
             rendered.append(f"<|{role}>\n{content}")
         rendered.append("<|assistant>\n")
+        return "\n".join(rendered)
+
+    @staticmethod
+    def _format_tinyllama_prompt(messages: List[Dict[str, str]]) -> str:
+        rendered = []
+        for message in messages:
+            role = message.get("role", "user").strip().lower()
+            content = message.get("content", "").strip()
+            if content:
+                rendered.append(f"<|{role}|>\n{content}</s>")
+        rendered.append("<|assistant|>\n")
+        return "\n".join(rendered)
+
+    @staticmethod
+    def _format_gemma_prompt(messages: List[Dict[str, str]]) -> str:
+        system = []
+        rendered = []
+        for message in messages:
+            role = message.get("role", "user").strip().lower()
+            content = message.get("content", "").strip()
+            if not content:
+                continue
+            if role == "system":
+                system.append(content)
+                continue
+            if role == "assistant":
+                role = "model"
+            elif role == "user" and system:
+                content = "\n\n".join(system + [content])
+                system = []
+            rendered.append(f"<start_of_turn>{role}\n{content}<end_of_turn>")
+        if system:
+            rendered.append(f"<start_of_turn>user\n{' '.join(system)}<end_of_turn>")
+        rendered.append("<start_of_turn>model\n")
         return "\n".join(rendered)
 
     def generate_structured_json(

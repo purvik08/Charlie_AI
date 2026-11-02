@@ -218,6 +218,7 @@ class DragDropManager:
         self._chat_frame = chat_frame
         self._on_drop    = on_drop
         self._on_pick    = on_pick_path
+        self._enabled    = True
 
         # Drop overlay (always created; shown only during drag-hover)
         self._overlay = DropOverlay(chat_frame)
@@ -240,6 +241,8 @@ class DragDropManager:
             logger.warning("Could not register DnD handlers: %s", exc)
 
     def _on_drag_enter(self, event) -> None:
+        if not self._enabled:
+            return
         self._overlay.show()
         # Pulse the panel border cyan
         try:
@@ -255,6 +258,8 @@ class DragDropManager:
 
     def _on_drop_event(self, event) -> None:
         self._overlay.hide()
+        if not self._enabled:
+            return
         raw = getattr(event, "data", "")
         path = _clean_dnd_path(raw)
         if path:
@@ -266,6 +271,8 @@ class DragDropManager:
     # ------------------------------------------------------------------ picker
     def open_file_picker(self) -> None:
         """Open a native file dialog and route the chosen file."""
+        if not self._enabled:
+            return
         filetypes = [
             ("All supported files",
              " ".join(f"*{e}" for e in sorted(_IMAGE_EXT | _DOC_EXT))),
@@ -288,3 +295,9 @@ class DragDropManager:
     @property
     def native_dnd(self) -> bool:
         return DND_AVAILABLE
+
+    def set_enabled(self, enabled: bool) -> None:
+        """Prevent drops and file-picking while an assistant request is active."""
+        self._enabled = enabled
+        if not enabled:
+            self._overlay.hide()

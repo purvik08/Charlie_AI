@@ -109,7 +109,7 @@ flowchart TD
 
 ```mermaid
 flowchart LR
-    A[Image or screenshot] --> B[Drop into Charlie or run an OCR command]
+    A[Image or screenshot] --> B[Drop into Charlie, use Read screen, or run an OCR command]
     B --> C[GLM-OCR]
     C --> D[Extracted text, table, or formula]
     D --> E[Summarise, save as a note, or create to-dos]
@@ -156,7 +156,8 @@ Charlie combines a small local-first workspace with a flexible assistant layer:
 
 - Floating orb widget (draggable, click-to-toggle panel)
 - Glassmorphism chat panel with message bubbles
-- Quick action buttons (Time, Date, Todos, System, Battery, Notes)
+- Quick action buttons (Time, Date, Todos, System, Battery, Notes, Read screen)
+- **Read screen** captures the current display on demand, stores it locally under `charlie_data/screens/`, and extracts visible text using the configured local OCR engine
 - Input bar with send button + microphone placeholder
 - System tray integration
 - Reminder notifications
@@ -233,7 +234,12 @@ python -m cli.main --help
 
 ## 🧠 Local LLM Setup
 
-Charlie uses **llama-cpp-python** for local GGUF model inference.
+Charlie uses **llama-cpp-python** for local GGUF model inference. TinyLlama is
+the default user-facing model: short conversational requests go to TinyLlama.
+Before general chat is sent to a model, Charlie applies a local deterministic
+complexity check. Long, multi-step, code/structured, or analytical requests are
+delegated to the configured `complex` model route. Direct tasks such as time,
+notes, reminders, OCR, and document parsing bypass chat models entirely.
 
 1. Install the package: `pip install llama-cpp-python`
 2. Place a `.gguf` model file in `./models/` or set `model_directories` in `config.json`
@@ -242,8 +248,16 @@ Charlie uses **llama-cpp-python** for local GGUF model inference.
 Example `config.json`:
 ```json
 {
-  "default_model": "qwen3-1.7b-q4_k_m.gguf",
+  "default_model": "tinyllama",
   "model_directories": ["./models"],
+  "model_routing": {
+    "simple": "tinyllama",
+    "complex": "gemma-3-4b-it"
+  },
+  "complexity_router": {
+    "long_request_chars": 700,
+    "multi_step_threshold": 2
+  },
   "llama": {
     "context_size": 2048,
     "threads": 4,
@@ -252,6 +266,10 @@ Example `config.json`:
   }
 }
 ```
+
+Change the `complex` route to the name of any stronger local GGUF model that
+you have installed. If it is unavailable, Charlie returns the normal local
+model error rather than sending your request to a cloud service.
 
 ## 🖼️ GLM-OCR setup
 

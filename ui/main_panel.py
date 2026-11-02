@@ -247,6 +247,7 @@ class MainPanel:
         self._queue     = queue.Queue()
         self._last_resp = ''
         self._dnd       = None       # DragDropManager, set after _build()
+        self._request_in_progress = False
 
         # Use a DnD-aware Toplevel when tkinterdnd2 is available
         if DND_AVAILABLE and TkinterDnD is not None:
@@ -453,14 +454,19 @@ class MainPanel:
     # ------------------------------------------------------------------ send
     def _on_send(self, text: str) -> None:
         """Called when user submits a message."""
-        if not text.strip():
+        if not text.strip() or self._request_in_progress:
             return
+
+        self._request_in_progress = True
 
         # Show user message immediately
         self._chat.add_message('user', text)
 
         # Disable input + show typing
         self._input.set_enabled(False)
+        self._quick.set_enabled(False)
+        if self._dnd:
+            self._dnd.set_enabled(False)
         self._chat.show_typing(True)
         self._set_status('busy')
 
@@ -514,7 +520,11 @@ class MainPanel:
                 pass
             self._set_status('error')
         finally:
+            self._request_in_progress = False
             self._input.set_enabled(True)
+            self._quick.set_enabled(True)
+            if self._dnd:
+                self._dnd.set_enabled(True)
             self._input.focus_input()
 
     def _set_status(self, status: str) -> None:

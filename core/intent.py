@@ -31,6 +31,10 @@ class IntentDetector:
             return IntentResult("mute", 0.98, {})
         if lowered in {"take screenshot", "screenshot"}:
             return IntentResult("take_screenshot", 0.98, {})
+        if lowered in {"read screen", "read my screen", "read the screen", "screen text"}:
+            return IntentResult("read_screen", 0.98, {})
+        if lowered in {"clear screen captures", "clear screen capture", "delete screen captures"}:
+            return IntentResult("clear_screen_captures", 0.98, {})
         if lowered in {"lock pc", "lock computer", "lock windows"}:
             return IntentResult("lock_pc", 0.98, {})
         if lowered in {"shutdown", "shutdown pc", "restart", "restart pc"}:

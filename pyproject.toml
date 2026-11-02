@@ -36,3 +36,7 @@ charlie = "cli.main:app"
 
 [tool.setuptools.packages.find]
 include = ["cli*", "core*", "config*", "features*", "models*", "ui*"]
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+norecursedirs = ["PaddleOCR-main", "docling-main", "colibri-main", "gpt-researcher-main"]

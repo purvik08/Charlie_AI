@@ -21,9 +21,27 @@ class Config:
             "wake_word": "assistant",  # kept for compatibility but not used
             "memory_limit": 100,  # number of interactions to remember
             "data_dir": str(Path.home() / "offline_assistant_data"),
+            "default_model": "tinyllama",
+            "model_directories": ["./models"],
+            "model_routing": {
+                "simple": "tinyllama",
+                "complex": "gemma-3-4b-it",
+            },
+            "allow_task_fallback": False,
+            "max_loaded_models": 1,
+            "complexity_router": {
+                "long_request_chars": 700,
+                "multi_step_threshold": 2,
+            },
             "ocr_engine": "auto",  # auto | glm_ocr | paddleocr
             "ocr_model_dir": "models/image_to_text",
             "ocr_max_new_tokens": 2048,
+            "screen_capture": {
+                "retain_captures": False,
+                "max_captures": 10,
+                "retention_days": 7,
+                "mode": "primary",
+            },
             "features": {
                 "file_search": True,
                 "system_info": True,
@@ -32,7 +50,9 @@ class Config:
                 "reminders": True,
                 "time_telling": True,
                 "open_apps": True,
-                "play_music": True
+                "play_music": True,
+                "ocr": True,
+                "screen_reader": True,
             }
         }
 

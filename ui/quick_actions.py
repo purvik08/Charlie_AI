@@ -27,6 +27,7 @@ ACTIONS = [
     ('⌁  System',  'system info'),
     ('⌁  Battery', 'battery status'),
     ('✎  Notes',   'List my notes'),
+    ('◉  Read screen', 'Read screen'),
 ]
 
 
@@ -44,6 +45,8 @@ class QuickActions(tk.Frame):
         super().__init__(parent, bg=COLORS['bg_header'], height=52)
         self.pack_propagate(False)
         self._on_command = on_command
+        self._enabled = True
+        self._buttons = []
         self._build()
 
     # ------------------------------------------------------------------
@@ -83,6 +86,7 @@ class QuickActions(tk.Frame):
             relief=tk.FLAT,
         )
         btn.pack(side=tk.LEFT, padx=2, pady=3)
+        self._buttons.append(btn)
 
         # Hover effect
         def on_enter(_e):
@@ -92,8 +96,19 @@ class QuickActions(tk.Frame):
             btn.config(bg=COLORS['bg_raised'],     fg=COLORS['text_secondary'])
 
         def on_click(_e):
-            self._on_command(command)
+            if self._enabled:
+                self._on_command(command)
 
         btn.bind('<Enter>',    on_enter)
         btn.bind('<Leave>',    on_leave)
         btn.bind('<Button-1>', on_click)
+
+    def set_enabled(self, enabled: bool) -> None:
+        """Enable or dim quick actions while the assistant is busy."""
+        self._enabled = enabled
+        for button in self._buttons:
+            button.config(
+                bg=COLORS['bg_raised'] if enabled else COLORS['bg_header'],
+                fg=COLORS['text_secondary'] if enabled else COLORS['text_muted'],
+                cursor='hand2' if enabled else '',
+            )

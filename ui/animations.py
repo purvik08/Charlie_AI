@@ -13,7 +13,11 @@ Usage:
     engine.cancel_all()
 """
 
+import logging
 import math
+
+
+logger = logging.getLogger(__name__)
 
 
 class AnimationEngine:
@@ -62,7 +66,7 @@ class AnimationEngine:
             try:
                 callback()
             except Exception:
-                pass                          # never crash the event loop
+                logger.exception("Animation callback failed: %s", name)
             if name in self._tasks:
                 self._tasks[name] = self._root.after(interval_ms, _tick)
 
@@ -75,7 +79,7 @@ class AnimationEngine:
             try:
                 self._root.after_cancel(after_id)
             except Exception:
-                pass
+                logger.debug("Animation cancellation failed: %s", name, exc_info=True)
 
     def cancel_all(self) -> None:
         """Cancel every scheduled animation."""

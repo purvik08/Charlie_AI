@@ -1,45 +1,23 @@
-# Project Memory Log
+# Project Status Log
 
-## Current Status (as of 2026-07-29)
-- **Phase**: Refactoring Complete - Ready for Testing
-- **Last Update**: Project restructured from monolithic `offline_assistant.py` to modular architecture
-- **Core Components Implemented**:
-  - ✅ Main entry point (`main.py`)
-  - ✅ Assistant core logic (`assistant.py`)
-  - ✅ Professional GUI (`gui.py`)
-  - ✅ LLM interface (`model.py`)
-  - ✅ Configuration management (`config.py`)
-  - ✅ All original features preserved (time, system info, file search, notes, todos, reminders, app launcher)
-  - ✅ Text-to-speech functionality (pyttsx3)
-  - ❌ Speech recognition removed (as requested)
+## 2026-11-03 — Current baseline
 
-## Recent Changes
-1. **2026-07-29**: 
-   - Created modular structure with separate files for each concern
-   - Removed speech recognition code (VoskSTT, pyaudio, vosk dependencies)
-   - Implemented professional Tkinter-based GUI with chat interface
-   - Added configuration management (config.json + .env support)
-   - Created comprehensive documentation (README, PROJECT_SUMMARY, SOLUTION_SUMMARY)
-   - Added licensing (MIT) and gitignore
+- Repository version is `0.9.0` in `pyproject.toml`.
+- `main.py` dispatches to the GUI with no arguments and to the Typer CLI with
+  arguments.
+- The current UI is a polished floating-orb Tkinter assistant with quick
+  actions, file attachment, drag-and-drop, async response handling, and tray
+  support.
+- OCR supports bundled GLM-OCR weights for image text/table/formula extraction
+  and falls back to PaddleOCR/Tesseract; PDFs follow the fallback path.
+- Document parsing, web research, and a Colibri adapter are implemented as
+  optional integrations.
+- User-facing README and all `docs/` reference material were synchronized with
+  this architecture.
 
-2. **2026-07-28**:
-   - Original monolithic file (`offline_assistant.py`) backed up and replaced
-   - Initial refactoring began
+## Working assumptions
 
-## Known Status
-- **Build Status**: Successfully imports all modules (verified via test_imports.py)
-- **Runtime Status**: Ready for initial testing (requires Ollama setup)
-- **Documentation**: Complete user and developer documentation in place
-- **Testing**: Basic import tests passed; functional testing pending
-
-## Next Immediate Steps
-1. Test application with Ollama running
-2. Verify all features work in GUI
-3. Address any runtime issues
-4. Prepare for first release version
-
-## Dependencies Status
-- ✅ Python 3.8+ compatible
-- ✅ Required packages: pyttsx3, requests, psutil (optional)
-- ⚠️ Ollama must be installed separately (external dependency)
-- ⚠️ Language model (qwen3:1.7b) must be pulled via Ollama
+- Local model files, GLM-OCR weights, and vendor trees are intentionally ignored
+  by Git because of their size.
+- Core task utilities remain useful without any external model or network.
+- Optional integrations must remain graceful when their runtime is absent.

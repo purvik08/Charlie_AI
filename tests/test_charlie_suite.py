@@ -310,7 +310,8 @@ class UnitMemory(Base):
     def test_UT_39(self):
         m = self.mem(retention_limit=3)
         for i in range(5): m.add(f"q{i} python", f"a{i}"); time.sleep(0.002)
-        rows = sqlite3.connect(m.db_path).execute("select user_input from conversations order by timestamp").fetchall()
+        with sqlite3.connect(m.db_path) as connection:
+            rows = connection.execute("select user_input from conversations order by timestamp").fetchall()
         self.assertEqual([r[0] for r in rows], ["q2 python", "q3 python", "q4 python"])
     def test_UT_40(self):
         m = self.mem(); m.add("python lists tutorial", "ok"); m.add("cooking pasta recipe", "ok")
