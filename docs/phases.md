@@ -5,8 +5,8 @@
 - Modular assistant, configuration, local persistence, intent routing, and
   productivity features.
 - Desktop GUI and CLI interfaces.
-- Local GGUF, Colibri, OCR, GLM-OCR, document parsing, research, and
-  drag-and-drop integrations.
+- Colibri-first chat with GGUF fallback, OCR/GLM-OCR, document parsing,
+  research, screen reading, and drag-and-drop integrations.
 - Unit and integration coverage for the core and adapter contracts.
 
 ## Stabilization (next)
@@ -15,6 +15,7 @@
 - Benchmark startup, chat, document parsing, and GLM-OCR memory/latency.
 - Validate GUI behavior across supported Windows configurations.
 - Improve install, diagnostic, and missing-dependency guidance.
+- Add screen-region selection and platform-specific GUI smoke coverage.
 
 ## Product polish (later)
 

@@ -4,6 +4,7 @@ import logging
 import math
 import sqlite3
 import time
+from contextlib import closing
 from pathlib import Path
 from typing import Any, Dict, List, Optional
 
@@ -25,7 +26,7 @@ class RetrievalMemory:
         return sqlite3.connect(self.db_path)
 
     def _init_db(self) -> None:
-        with self._connect() as conn:
+        with closing(self._connect()) as conn:
             conn.execute(
                 """
                 CREATE TABLE IF NOT EXISTS conversations (
@@ -40,11 +41,12 @@ class RetrievalMemory:
                 """
             )
             conn.execute("CREATE INDEX IF NOT EXISTS idx_conversation_timestamp ON conversations(timestamp)")
+            conn.commit()
 
     def add(self, user_input: str, assistant_response: str, metadata: Optional[Dict[str, Any]] = None) -> None:
         embedding = self.embed(f"{user_input}\n{assistant_response}")
         summary = self._summarize(user_input, assistant_response)
-        with self._connect() as conn:
+        with closing(self._connect()) as conn:
             conn.execute(
                 """
                 INSERT INTO conversations
@@ -61,12 +63,13 @@ class RetrievalMemory:
                 ),
             )
             self._enforce_retention(conn)
+            conn.commit()
 
     def retrieve(self, query: str, limit: int = 4) -> List[Dict[str, Any]]:
         start = time.perf_counter()
         query_embedding = self.embed(query)
         rows = []
-        with self._connect() as conn:
+        with closing(self._connect()) as conn:
             for row in conn.execute(
                 "SELECT id, timestamp, user_input, assistant_response, summary, embedding, metadata FROM conversations"
             ):

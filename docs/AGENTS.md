@@ -15,9 +15,10 @@ the configured data directory.
 - `core/assistant.py` owns request routing, feature initialization, conversation
   history, and reminder lifecycle.
 - `core/intent.py` performs rule-based intent recognition before general chat.
-- `core/complexity.py` keeps TinyLlama as the default chat model and assigns
-  long, multi-step, code/structured, and analytical requests to the configured
-  stronger local route.
+- Colibri is the preferred free-form chat backend whenever its local server is
+  running. Otherwise `core/complexity.py` routes simple chat to TinyLlama and
+  long, multi-step, code/structured, or analytical requests to the configured
+  stronger GGUF route.
 - `models/model.py` discovers and invokes local GGUF models through
   `llama-cpp-python`; `features/local_llm/colibri_adapter.py` integrates a
   separately-running Colibri server.
@@ -43,9 +44,9 @@ environments, generated data, GGUF files, GLM-OCR weights, and bundled vendor
 source trees are intentionally not tracked. The default `data_dir` holds
 `chat.db`, notes, to-dos, reminders, OCR output, and document output.
 
-GLM-OCR uses `models/image_to_text/model.safetensors`; it loads lazily and
-downloads only its small support files on first use. Do not commit the weight
-file or generated support files.
+GLM-OCR uses `models/image_to_text/model.safetensors`; its required tokenizer,
+processor, configuration, and template files are present locally in this
+workspace, so ordinary use is offline. Do not commit the 2.65 GB weight file.
 
 ## Change discipline
 

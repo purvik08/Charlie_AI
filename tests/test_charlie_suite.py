@@ -310,7 +310,7 @@ class UnitMemory(Base):
     def test_UT_39(self):
         m = self.mem(retention_limit=3)
         for i in range(5): m.add(f"q{i} python", f"a{i}"); time.sleep(0.002)
-        with sqlite3.connect(m.db_path) as connection:
+        with contextlib.closing(sqlite3.connect(m.db_path)) as connection:
             rows = connection.execute("select user_input from conversations order by timestamp").fetchall()
         self.assertEqual([r[0] for r in rows], ["q2 python", "q3 python", "q4 python"])
     def test_UT_40(self):
@@ -352,7 +352,7 @@ class Integration(Base):
     def test_IT_06(self):
         a = self.make_assistant(real_manager=True)
         r = a.process_command("explain recursion"); self.assertTrue(r.startswith("I'm having trouble processing that request"))
-        self.assertIn("No GGUF model is configured", r); self.assertEqual(a.process_command("list todos"), "Your to-do list is empty")
+        self.assertIn("configured simple model 'tinyllama' is unavailable", r); self.assertEqual(a.process_command("list todos"), "Your to-do list is empty")
     def test_IT_07(self):
         a = self.make_assistant({"todo_list": False}); r = a.process_command("add task x")
         self.assertIn("disabled", r); self.assertFalse((self.data() / "todo.json").exists())
@@ -389,7 +389,8 @@ class Integration(Base):
         a = self.make_assistant(); a.tts = None; a.speak("hello")
         self.assertEqual(a.submit_command("hello"), a.GREETING_REPLY)
         self.assertEqual(a.conversation_history, [{"user": "hello", "assistant": a.GREETING_REPLY}])
-        self.assertEqual(sqlite3.connect(a.memory.db_path).execute("select count(*) from conversations").fetchone()[0], 1)
+        with contextlib.closing(sqlite3.connect(a.memory.db_path)) as connection:
+            self.assertEqual(connection.execute("select count(*) from conversations").fetchone()[0], 1)
     def test_IT_14(self):
         try: import tkinter  # noqa
         except ImportError: self.skipTest("Blocked: Tkinter/display not available in this environment")

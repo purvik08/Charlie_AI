@@ -17,14 +17,14 @@ local ownership with useful direct tools that do not depend on an LLM.
 | --- | --- |
 | Interfaces | Provide a Tkinter desktop UI and Typer CLI backed by the same assistant state. |
 | Direct tasks | Support time/date, system information, notes, to-dos, reminders, file search, and allowlisted app/folder opening. |
-| Conversation | Use TinyLlama for ordinary user chat and a configured stronger local GGUF route for complex requests; Colibri remains optional. |
+| Conversation | Prefer a ready local Colibri server for free-form chat; otherwise route ordinary chat to TinyLlama and complex chat to the configured stronger GGUF model. |
 | OCR | Recognize image text, formulas, and tables through local GLM-OCR when configured; provide OCR fallbacks. |
 | Screen reading | Provide an explicit desktop action that captures the current screen locally and extracts its visible text with the OCR stack. |
 | Documents | Convert supported documents through an optional parser with fallback extraction. |
 | File interaction | Accept file selection and drag-and-drop in the desktop UI. |
 | Data | Persist personal workspace records locally in the configured data directory. |
 | Safety | Require a follow-up confirmation for lock, shutdown, and restart requests. |
-| Optional online work | Keep research and first-run GLM-OCR support-file retrieval explicit and independently disableable. |
+| Optional online work | Keep research explicit and independently disableable. GLM-OCR support files are present locally in this workspace. |
 
 ## Non-functional requirements
 

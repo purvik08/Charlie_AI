@@ -1,8 +1,9 @@
-# Optional Ollama Modelfile (legacy-compatible)
+# Optional Ollama Modelfile (legacy-compatible only)
 
 # Charlie's primary embedded chat path uses GGUF models through llama-cpp-python.
-# This file is retained only for users who want to create an Ollama model outside
-# the application. It is not loaded by Charlie at runtime.
+# This file is retained only for users who want an Ollama model outside the
+# application. Charlie's runtime prefers Colibri and then local GGUF models;
+# this file is never loaded by Charlie.
 
 FROM qwen3:1.7b
 

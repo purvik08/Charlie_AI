@@ -157,7 +157,7 @@ Charlie combines a small local-first workspace with a flexible assistant layer:
 - Floating orb widget (draggable, click-to-toggle panel)
 - Glassmorphism chat panel with message bubbles
 - Quick action buttons (Time, Date, Todos, System, Battery, Notes, Read screen)
-- **Read screen** captures the current display on demand, stores it locally under `charlie_data/screens/`, and extracts visible text using the configured local OCR engine
+- **Read screen** captures the primary display on demand and extracts visible text using the configured local OCR engine. Captures are deleted after OCR by default; retention is opt-in and can be cleared with `Clear screen captures`.
 - Input bar with send button + microphone placeholder
 - System tray integration
 - Reminder notifications
@@ -236,10 +236,11 @@ python -m cli.main --help
 
 Charlie uses **llama-cpp-python** for local GGUF model inference. TinyLlama is
 the default user-facing model: short conversational requests go to TinyLlama.
-Before general chat is sent to a model, Charlie applies a local deterministic
-complexity check. Long, multi-step, code/structured, or analytical requests are
-delegated to the configured `complex` model route. Direct tasks such as time,
-notes, reminders, OCR, and document parsing bypass chat models entirely.
+When the local Colibri server is available, it is Charlie's preferred backend
+for free-form chat. Otherwise Charlie applies a local deterministic complexity
+check: long, multi-step, code/structured, or analytical requests are delegated
+to the configured `complex` GGUF route. Direct tasks such as time, notes,
+reminders, OCR, and document parsing bypass chat models entirely.
 
 1. Install the package: `pip install llama-cpp-python`
 2. Place a `.gguf` model file in `./models/` or set `model_directories` in `config.json`
@@ -254,6 +255,9 @@ Example `config.json`:
     "simple": "tinyllama",
     "complex": "gemma-3-4b-it"
   },
+  "allow_task_fallback": false,
+  "max_loaded_models": 1,
+  "prefer_colibri": true,
   "complexity_router": {
     "long_request_chars": 700,
     "multi_step_threshold": 2
@@ -263,13 +267,21 @@ Example `config.json`:
     "threads": 4,
     "gpu_layers": 0,
     "temperature": 0.7
+  },
+  "screen_capture": {
+    "retain_captures": false,
+    "max_captures": 10,
+    "retention_days": 7,
+    "mode": "primary"
   }
 }
 ```
 
 Change the `complex` route to the name of any stronger local GGUF model that
-you have installed. If it is unavailable, Charlie returns the normal local
-model error rather than sending your request to a cloud service.
+you have installed. If it is unavailable, Charlie reports the missing complex
+route rather than silently downgrading to TinyLlama or sending a request to a
+cloud service. Set `screen_capture.mode` to `all` only when OCR of every
+connected display is required.
 
 ## 🖼️ GLM-OCR setup
 

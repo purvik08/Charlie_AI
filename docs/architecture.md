@@ -38,10 +38,10 @@ flowchart TD
 | Desktop UI | `ui/`: floating orb, panel, input bar, quick actions, drag/drop |
 | CLI | `cli/main.py` and `cli/commands/` using Typer |
 | Local chat | `models/model.py` with `llama-cpp-python` and GGUF assets |
-| Model delegation | `core/complexity.py`: TinyLlama handles simple chat; the configured complex route handles long, multi-step, code/structured, or analytical requests |
+| Model delegation | Colibri is preferred for free-form chat whenever its local server is available. Otherwise `core/complexity.py` sends simple chat to TinyLlama and long, multi-step, code/structured, or analytical requests to the configured complex route. A missing explicit route returns an error rather than silently downgrading. |
 | Alternative local server | `features/local_llm/colibri_adapter.py` |
 | Image OCR | `features/ocr/glm_ocr_adapter.py`, then PaddleOCR/Tesseract fallback |
-| Screen reading | `features/screen_reader/`: explicit on-demand desktop capture followed by the configured local OCR adapter |
+| Screen reading | `features/screen_reader/`: explicit primary-display capture (or all displays by configuration) followed by the configured local OCR adapter; captures are deleted after OCR by default |
 | Documents | `features/document_parser/docling_adapter.py` with fallback extractors |
 | Research | `features/web_search/gpt_researcher_adapter.py`; optional online path |
 
@@ -50,7 +50,8 @@ flowchart TD
 `data_dir` is configurable in `config.json`; its default is a directory under
 the user's home folder. It holds `chat.db`, `notes/`, `todo.json`,
 `reminders.json`, `ocr/`, `screens/`, and `documents/`. `screens/` receives
-only user-requested desktop captures for local OCR. Notes and JSON records are written
+only user-requested desktop captures when retention is explicitly enabled;
+temporary captures are removed immediately after OCR. Notes and JSON records are written
 by their feature modules. Retrieval memory persists conversation summaries in
 SQLite. Reminder checking runs in a daemon thread and marshals GUI updates back
 to the Tk thread.

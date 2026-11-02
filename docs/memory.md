@@ -8,10 +8,11 @@
 - The current UI is a polished floating-orb Tkinter assistant with quick
   actions, file attachment, drag-and-drop, async response handling, and tray
   support.
-- OCR supports bundled GLM-OCR weights for image text/table/formula extraction
-  and falls back to PaddleOCR/Tesseract; PDFs follow the fallback path.
-- Document parsing, web research, and a Colibri adapter are implemented as
-  optional integrations.
+- OCR supports bundled GLM-OCR weights plus locally present support files for
+  image text/table/formula extraction and falls back to PaddleOCR/Tesseract;
+  PDFs follow the fallback path.
+- Document parsing and web research are optional integrations. Colibri is the
+  preferred free-form local chat backend whenever its server is available.
 - User-facing README and all `docs/` reference material were synchronized with
   this architecture.
 

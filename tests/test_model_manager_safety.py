@@ -2,7 +2,7 @@ from pathlib import Path
 
 import pytest
 
-from models.model import InferenceError, ModelManager
+from models.model import InferenceError, ModelInfo, ModelManager
 
 
 def _manager(tmp_path, **config):
@@ -42,3 +42,27 @@ def test_tinyllama_and_gemma_prompts_use_their_chat_templates():
 
     assert "<|system|>" in tiny and "<|assistant|>" in tiny
     assert "<start_of_turn>user" in gemma and "<start_of_turn>model" in gemma
+
+
+def test_loading_a_second_model_evicts_the_first_by_default(tmp_path, monkeypatch):
+    first = tmp_path / "tinyllama.gguf"
+    second = tmp_path / "gemma.gguf"
+    first.write_bytes(b"GGUFone")
+    second.write_bytes(b"GGUFtwo")
+    manager = _manager(tmp_path)
+
+    class FakeEngine:
+        def __init__(self, path, settings):
+            self.path = path
+            self.unloaded = False
+
+        def unload(self):
+            self.unloaded = True
+
+    monkeypatch.setattr("models.model.LlamaCppEngine", FakeEngine)
+    manager.load_model("tinyllama")
+    first_engine = manager.engines["tinyllama"]
+    manager.load_model("gemma")
+
+    assert list(manager.engines) == ["gemma"]
+    assert first_engine.unloaded is True

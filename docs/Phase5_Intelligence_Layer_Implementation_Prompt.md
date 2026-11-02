@@ -10,7 +10,8 @@ layer is now part of the application rather than a planned rewrite.
 2. `IntentDetector` identifies direct tasks such as OCR, document parsing, web
    search, system operations, and productivity commands.
 3. Strict rules cover natural-language command variants.
-4. General questions use the configured local model manager and include a short
+4. General questions prefer a ready local Colibri server. When Colibri is not
+   available, the configured local GGUF model manager is used with a short
    recent conversation window plus retrieval-memory summaries when available.
 5. `submit_command()` records successful exchanges in in-memory history and
    SQLite retrieval memory.

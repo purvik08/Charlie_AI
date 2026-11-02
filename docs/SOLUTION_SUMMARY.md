@@ -10,7 +10,8 @@ original monolithic prototype.
   conversation history, and reminder lifecycle.
 - Tkinter UI code is contained in `ui/`; command surfaces are contained in
   `cli/commands/`; optional integrations live under `features/`.
-- Local GGUF and optional Colibri inference coexist with direct tools.
+- A ready Colibri server is preferred for free-form local chat; TinyLlama and
+  the configured complex GGUF route provide automatic local fallback.
 
 ## Delivered user features
 
@@ -22,6 +23,6 @@ flows and setup.
 ## Deliberate constraints
 
 Heavyweight runtimes and model weights are optional/local assets, not ordinary
-repository dependencies. Network paths are limited to optional research and
-first-run GLM-OCR support files. The app has no voice recognition, cloud sync,
-or encryption-at-rest yet.
+repository dependencies. Network paths are limited to explicitly requested web
+research; GLM-OCR support files are already local in this workspace. The app
+has no voice recognition, cloud sync, or encryption-at-rest yet.

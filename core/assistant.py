@@ -490,6 +490,7 @@ class OfflineAssistant:
             self.config.get("complexity_router", {})
         )
         self.last_model_route = None
+        self.last_model_name = None
         self.conversation_history: List[Dict[str, str]] = []
         self.memory_limit = self.config.get("memory_limit", 100)
         self._pending_action: Optional[str] = None
@@ -985,8 +986,6 @@ class OfflineAssistant:
 
     # ------------------------------------------------------------------ chat
     def _chat(self, raw: str) -> str:
-        if not self.model_manager:
-            return "I'm not sure how to help with that. Try asking about time, date, system info, or to-do list."
         try:
             decision = self.complexity_router.classify(raw)
             self.last_model_route = decision
@@ -1006,6 +1005,22 @@ class OfflineAssistant:
                 messages.append({"role": "user", "content": exchange["user"]})
                 messages.append({"role": "assistant", "content": exchange["assistant"]})
             messages.append({"role": "user", "content": raw})
+
+            # Colibri is preferred for free-form conversation when its local
+            # server is ready. Direct tools have already returned before this
+            # method, so OCR, documents, and system actions retain their own
+            # specialized local implementations.
+            colibri = getattr(self, "colibri", None)
+            prefer_colibri = self.config.get("prefer_colibri", True)
+            if prefer_colibri and colibri is not None and colibri.available:
+                response = colibri.chat_messages(messages)
+                if response:
+                    self.last_model_name = f"Colibri · {colibri.active_model() or 'local model'}"
+                    return response.strip()
+
+            if not self.model_manager:
+                return "I'm not sure how to help with that. Start Colibri or configure a local GGUF model."
+            self.last_model_name = self.model_manager.resolve_model_name(decision.task)
             return self.model_manager.chat(messages, task=decision.task).strip()
         except Exception as e:
             return f"I'm having trouble processing that request: {e}"

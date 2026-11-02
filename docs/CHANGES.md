@@ -16,6 +16,15 @@ and CLI application. The current implementation includes:
 - Docling-based document conversion with fallback extraction paths.
 - GPT Researcher and Colibri adapters behind optional configuration flags.
 - Expanded tests covering the integrations and GLM-OCR adapter behavior.
+- Colibri-first free-form chat with automatic GGUF fallback when its local
+  server is unavailable.
+- Strict complex-model routing, nested Llama configuration support, one-model
+  GGUF residency, family-specific TinyLlama/Gemma prompts, and visible model
+  status in the desktop header.
+- Safer screen reading: temporary captures by default, configurable retention,
+  a clear-captures command, and serialized desktop requests.
+- Project pytest discovery is restricted to `tests/`; SQLite connections and
+  animation failures are handled more reliably.
 
 ## Historical corrections retained in the codebase
 

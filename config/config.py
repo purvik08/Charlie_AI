@@ -29,6 +29,7 @@ class Config:
             },
             "allow_task_fallback": False,
             "max_loaded_models": 1,
+            "prefer_colibri": True,
             "complexity_router": {
                 "long_request_chars": 700,
                 "multi_step_threshold": 2,

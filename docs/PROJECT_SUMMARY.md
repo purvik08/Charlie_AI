@@ -12,10 +12,11 @@ an available local model.
 - CLI commands for productivity, system information, OCR, document conversion,
   research, and local model services.
 - Local notes, to-dos, reminders, file search, and SQLite retrieval memory.
-- Local GGUF inference, optional Colibri connection, and optional TTS.
+- Colibri-first local chat with TinyLlama/Gemma GGUF fallback, plus optional TTS.
 - GLM-OCR image recognition with PaddleOCR/Tesseract fallback.
 - On-demand screen reading: a desktop quick action captures the current display
-  locally and extracts its visible text through the OCR stack.
+  locally and extracts its visible text through the OCR stack; captures are
+  temporary by default.
 - Optional Docling parsing and GPT Researcher web/deep research.
 
 ## Repository conventions

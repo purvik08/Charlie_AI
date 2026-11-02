@@ -180,6 +180,7 @@ class _HeaderBar(tk.Frame):
             fg=COLORS['status_ready'],
         )
         self._status_lbl.pack(side=tk.RIGHT, padx=(8, 2), pady=0)
+        self._model_name = None
 
         self._update_dot(COLORS['status_ready'])
 
@@ -196,13 +197,19 @@ class _HeaderBar(tk.Frame):
             'offline': ('Offline',     COLORS['status_offline']),
         }
         label, color = cfg.get(status, ('Ready', COLORS['status_ready']))
-        self._status_lbl.config(text=label, fg=color)
+        detail = f" · {self._model_name}" if self._model_name else ""
+        self._status_lbl.config(text=f"{label}{detail}", fg=color)
         self._update_dot(color)
 
         # Bind drag on children too
         for widget in (self._status_lbl, self._status_dot):
             widget.bind('<ButtonPress-1>', self._drag_start)
             widget.bind('<B1-Motion>',      self._drag_move)
+
+    def set_model(self, model_name) -> None:
+        """Show the local chat model used for the most recent free-form reply."""
+        self._model_name = model_name
+        self.set_status('ready')
 
     # ------------------------------------------------------------------
     # Drag (move panel window)
@@ -508,6 +515,8 @@ class MainPanel:
             self._chat.show_typing(False)
             if kind == 'response':
                 self._chat.add_message('assistant', data)
+                if getattr(self._assistant, 'last_model_route', None):
+                    self._header.set_model(getattr(self._assistant, 'last_model_name', None))
                 self._set_status('ready')
             elif kind == 'error':
                 self._chat.add_message('system', f'Error: {data}')

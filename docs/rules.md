@@ -17,7 +17,11 @@
 ## Runtime behavior
 
 - Optional adapters must fail locally with actionable guidance.
+- Prefer a ready local Colibri server for free-form chat; fall back to the
+  configured GGUF route when it is unavailable.
 - Do not block the Tk UI thread with inference or document processing.
+- Allow only one active desktop request at a time; disable quick actions and
+  attachments while that request is running.
 - Direct deterministic commands should be routed before calling an LLM.
 - Preserve confirmation handling for lock, shutdown, and restart.
 - Restrict app/folder launch requests to the project's allowlist.
@@ -28,5 +32,7 @@
   handoff when practical.
 - Keep `README.md`, `docs/architecture.md`, and configuration examples aligned
   with the implementation.
+- Keep `KNOWN_ISSUES.md` limited to current operational limits and record
+  resolved reliability fixes in `CHANGES.md`.
 - Use plain language in user-facing errors and state which dependency or
   configuration is missing.

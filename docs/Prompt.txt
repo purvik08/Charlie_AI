@@ -10,6 +10,7 @@ Current guidance for future inference work:
 2. Preserve GGUF compatibility and do not delete user-owned local model files.
 3. Keep GUI work asynchronous and surface usable failures to the user.
 4. Do not make core productivity features depend on model availability.
-5. Treat Colibri and external research as optional integrations.
+5. Prefer Colibri whenever its local server is ready; use the GGUF routing
+   path only when Colibri is unavailable. Treat external research as optional.
 6. Update tests, `README.md`, `architecture.md`, and requirements whenever an
    inference backend changes.
