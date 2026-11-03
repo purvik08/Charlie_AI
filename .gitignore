@@ -139,6 +139,11 @@ config/.env
 offline_assistant_data/
 *.gguf
 models/image_to_text/model.safetensors
+# GLM-OCR requires these small configuration and tokenizer files beside its
+# excluded weight file. Keep them versioned so OCR can run offline once the
+# user supplies model.safetensors.
+!models/image_to_text/*.json
+!models/image_to_text/chat_template.jinja
 !config.example.json
 !docker/config.json
 PaddleOCR-main/

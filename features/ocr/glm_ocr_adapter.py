@@ -1,9 +1,9 @@
 """Local GLM-OCR adapter backed by ``models/image_to_text/model.safetensors``.
 
-The checked-in model directory intentionally contains the large weight file only.
-GLM-OCR also needs a small set of Hugging Face configuration, processor, tokenizer,
-and prompt-template files.  This adapter downloads *only* those files on first use
-and keeps them beside the weights, so later runs are fully local.
+The repository includes the small Hugging Face configuration, processor, tokenizer,
+and prompt-template files. Only the large weight file is excluded. If a custom
+model directory is incomplete, the adapter can download its missing support files
+once and keeps them beside the weights for later local use.
 """
 
 from __future__ import annotations

@@ -4,8 +4,8 @@ Charlie is a desktop and command-line assistant for everyday work: local chat,
 notes, to-dos, reminders, file discovery, document extraction, and image OCR.
 It runs primarily on your machine and keeps user data in local storage.
 
-> Optional features such as web research and first-run GLM-OCR support-file
-> setup require network access. They are never required for the local workflow.
+> Web research is an optional network feature. Local chat and GLM-OCR are fully
+> offline after you provide the excluded model-weight files.
 
 ## 🚀 Quick Start
 
@@ -56,7 +56,7 @@ flowchart TD
     S -->|GLM-OCR| T[GLM-OCR adapter]
     T --> U[model.safetensors]
     T --> V[Tokenizer, processor, and config]
-    V -. first use only .-> W[Official GLM-OCR support files]
+    V --> W[Versioned local support files]
     T --> X[Text, table, or formula result]
     S -->|Fallback or PDF| Y[PaddleOCR / Tesseract]
     Y --> X
@@ -321,11 +321,10 @@ connected display is required.
 
 ## 🖼️ GLM-OCR setup
 
-The bundled `models/image_to_text/model.safetensors` is the local
-[GLM-OCR](https://huggingface.co/zai-org/GLM-OCR) image-to-text model. On its
-first use Charlie downloads the model's small tokenizer, processor, and
-configuration files from the official repository; the 2.65 GB weight file is
-already local and is never downloaded again.
+`models/image_to_text/` includes GLM-OCR's tokenizer, processor,
+configuration, and prompt-template support files. Add the excluded
+`model.safetensors` weight from the local model bundle to make image OCR fully
+offline.
 
 When installing as a package instead of from `requirements.txt`, install the
 OCR runtime with `pip install -e ".[glm-ocr]"`.
@@ -347,7 +346,7 @@ machines. PDFs continue through the existing OCR pipeline.
 
 - **Local-first** — notes, tasks, reminders, and retrieval memory stay in the configured data directory.
 - **No telemetry** or tracking
-- **User-controlled integrations** — web research and the first GLM-OCR support-file download are optional network paths.
+- **User-controlled integrations** — web research is an optional network path; local model inference and OCR stay on-device.
 - **Configuration-driven** — feature flags and model settings are controlled through `config.json`.
 
 ## 📁 Data Storage
